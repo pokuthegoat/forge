@@ -67,7 +67,17 @@ export function Nav() {
               {wallet.publicKey?.toBase58().slice(0, 4)}...{wallet.publicKey?.toBase58().slice(-4)}
             </button>
           ) : (
-            <button type="button" className="pill" onClick={wallet.login}>
+            <button
+              type="button"
+              className="pill"
+              onClick={() => {
+                // Privy refuses to reopen its login modal for an already-authenticated
+                // session (e.g. one stuck without a wallet attached) - log out first so
+                // the button never goes dead, then the next click logs back in cleanly.
+                if (wallet.authenticated) wallet.logout();
+                else wallet.login();
+              }}
+            >
               Log in
             </button>
           )}

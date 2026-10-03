@@ -40,6 +40,7 @@ export function useForgeWallet() {
 
   return {
     ready,
+    authenticated,
     connected: authenticated && !!wallet,
     publicKey,
     login,
