@@ -29,9 +29,45 @@ export function getOnlinePumpSdk(connection: Connection) {
 }
 
 /**
+ * Builds the instructions to launch a new token on real pump.fun via
+ * create_v2, with no buy bundled in - a pure $0-dev-buy creation. Only pays
+ * the normal on-chain creation/rent cost.
+ */
+export async function buildCreateOnlyInstructions({
+  creator,
+  mint,
+  name,
+  symbol,
+  uri,
+}: {
+  creator: PublicKey;
+  mint: Keypair;
+  name: string;
+  symbol: string;
+  uri: string;
+}): Promise<TransactionInstruction[]> {
+  const pumpSdk = getPumpSdk();
+  const ix = await pumpSdk.createV2Instruction({
+    mint: mint.publicKey,
+    name,
+    symbol,
+    uri,
+    creator,
+    user: creator,
+    mayhemMode: false,
+    quoteMint: NATIVE_MINT,
+    quoteTokenProgram: TOKEN_PROGRAM_ID,
+  });
+  return [ix];
+}
+
+/**
  * Builds the instructions to launch a new token on real pump.fun: creates
  * the mint via create_v2 and performs an initial buy in the same
- * transaction. The mint keypair must sign.
+ * transaction. The mint keypair must sign. Pass a zero initialBuySol to
+ * skip the buy entirely (see buildCreateOnlyInstructions) - a bundled buy
+ * instruction requires a non-zero token amount and would be rejected
+ * on-chain otherwise.
  */
 export async function buildLaunchInstructions({
   connection,
@@ -52,6 +88,10 @@ export async function buildLaunchInstructions({
   initialBuySol: BN;
   slippage?: number;
 }): Promise<TransactionInstruction[]> {
+  if (initialBuySol.isZero()) {
+    return buildCreateOnlyInstructions({ creator, mint, name, symbol, uri });
+  }
+
   const pumpSdk = getPumpSdk();
   const onlineSdk = getOnlinePumpSdk(connection);
   const global = await onlineSdk.fetchGlobal();
