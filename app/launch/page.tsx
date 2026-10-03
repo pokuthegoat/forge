@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Keypair, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import BN from "bn.js";
-import Link from "next/link";
 
 import { buildLaunchInstructions, buildFeeSharingSetupInstructions } from "@/lib/pumpfun";
 import { useForgeWallet } from "@/lib/useForgeWallet";
@@ -142,15 +141,9 @@ export default function LaunchPage() {
   }
 
   return (
-    <main>
+    <main className="app-main">
       <div className="container">
-        <nav className="nav">
-          <Link href="/" className="logo">
-            FORGE
-          </Link>
-        </nav>
-
-        <section className="hero" style={{ padding: "60px 0" }}>
+        <section className="page-hero" style={{ padding: "60px 0" }}>
           <h1 style={{ fontSize: 36 }}>Launch a token</h1>
           <p>
             Launches for real on pump.fun. Forge then takes over the

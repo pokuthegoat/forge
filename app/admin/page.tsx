@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useForgeWallet } from "@/lib/useForgeWallet";
 
 interface AdminToken {
@@ -77,23 +76,8 @@ export default function AdminPage() {
   }
 
   return (
-    <main>
+    <main className="app-main">
       <div className="container">
-        <nav className="nav">
-          <Link href="/" className="logo">
-            FORGE
-          </Link>
-          {wallet.connected ? (
-            <button className="btn" onClick={wallet.logout}>
-              {wallet.publicKey?.toBase58().slice(0, 4)}...{wallet.publicKey?.toBase58().slice(-4)}
-            </button>
-          ) : (
-            <button className="btn" onClick={wallet.login}>
-              Log in
-            </button>
-          )}
-        </nav>
-
         <section style={{ padding: "40px 0 20px" }}>
           <h1 style={{ fontSize: 28 }}>Admin</h1>
           <p style={{ color: "var(--text-dim)" }}>

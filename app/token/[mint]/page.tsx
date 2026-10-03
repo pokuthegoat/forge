@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import BN from "bn.js";
 
@@ -180,13 +179,8 @@ export default function TokenDashboard() {
 
   if (!token) {
     return (
-      <main>
+      <main className="app-main">
         <div className="container">
-          <nav className="nav">
-            <Link href="/" className="logo">
-              FORGE
-            </Link>
-          </nav>
           <div className="panel">
             <p>Loading this token's Forge state (or it hasn't been launched through Forge)...</p>
           </div>
@@ -198,14 +192,8 @@ export default function TokenDashboard() {
   const nextThreshold = (token.cards_unlocked + 1) * UNLOCK_THRESHOLD_LAMPORTS;
 
   return (
-    <main>
+    <main className="app-main">
       <div className="container">
-        <nav className="nav">
-          <Link href="/" className="logo">
-            FORGE
-          </Link>
-        </nav>
-
         <section style={{ padding: "40px 0 20px" }}>
           <h1 style={{ fontSize: 28 }}>
             {token.name} ({token.symbol})
