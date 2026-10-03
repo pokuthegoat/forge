@@ -9,6 +9,7 @@ import Link from "next/link";
 import { buildLaunchInstructions, buildFeeSharingSetupInstructions } from "@/lib/pumpfun";
 import { useForgeWallet } from "@/lib/useForgeWallet";
 import { getConnection } from "@/lib/solana-connection";
+import { confirmOrThrow } from "@/lib/solana-tx";
 
 export default function LaunchPage() {
   const connection = getConnection();
@@ -84,7 +85,7 @@ export default function LaunchPage() {
 
       setStatus("Confirm the launch transaction in your wallet...");
       const sig1 = await wallet.sendTransaction(tx1, connection);
-      await connection.confirmTransaction(sig1, "confirmed");
+      await confirmOrThrow(connection, sig1);
 
       setStatus("Registering token with Forge...");
       const res = await fetch("/api/tokens", {
@@ -117,7 +118,7 @@ export default function LaunchPage() {
 
       setStatus("Confirm the fee-sharing transaction in your wallet...");
       const sig2 = await wallet.sendTransaction(tx2, connection);
-      await connection.confirmTransaction(sig2, "confirmed");
+      await confirmOrThrow(connection, sig2);
 
       setStatus("Launched! Redirecting...");
       router.push(`/token/${mint.publicKey.toBase58()}`);

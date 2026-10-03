@@ -5,6 +5,7 @@ import { calculateRewardPayout } from "@/lib/forge-engine";
 import { loadTokenKeypair } from "@/lib/wallet-custody";
 import { getServerConnection } from "@/lib/connection";
 import { CARD_REWARD } from "@/lib/forge-program";
+import { confirmOrThrow } from "@/lib/solana-tx";
 
 export async function POST(
   req: NextRequest,
@@ -37,7 +38,7 @@ export async function POST(
   tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
   tx.sign(keypair);
   const sig = await connection.sendRawTransaction(tx.serialize());
-  await connection.confirmTransaction(sig, "confirmed");
+  await confirmOrThrow(connection, sig);
 
   const cardPools = token.card_pools.map((p) => BigInt(p));
   cardPools[CARD_REWARD] -= payout;

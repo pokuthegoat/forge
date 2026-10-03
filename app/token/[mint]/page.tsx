@@ -16,6 +16,7 @@ import {
 import { buildBuyInstructions, buildSellInstructions } from "@/lib/pumpfun";
 import { useForgeWallet } from "@/lib/useForgeWallet";
 import { getConnection } from "@/lib/solana-connection";
+import { confirmOrThrow } from "@/lib/solana-tx";
 
 const LAMPORTS_PER_SOL = 1_000_000_000;
 
@@ -87,7 +88,7 @@ export default function TokenDashboard() {
       tx.feePayer = wallet.publicKey;
       tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
       const sig = await wallet.sendTransaction(tx, connection);
-      await connection.confirmTransaction(sig, "confirmed");
+      await confirmOrThrow(connection, sig);
     });
   }
 
@@ -104,7 +105,7 @@ export default function TokenDashboard() {
       tx.feePayer = wallet.publicKey;
       tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
       const sig = await wallet.sendTransaction(tx, connection);
-      await connection.confirmTransaction(sig, "confirmed");
+      await confirmOrThrow(connection, sig);
     });
   }
 

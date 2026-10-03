@@ -56,15 +56,20 @@ export async function buildLaunchInstructions({
   const onlineSdk = getOnlinePumpSdk(connection);
   const global = await onlineSdk.fetchGlobal();
 
+  // bondingCurve: null signals "a curve about to be created" per the SDK's
+  // own docs. creatorFeeBps is intentionally omitted here to match
+  // createV2AndBuyInstructions below (also omitted) - the two must agree on
+  // the same rate or the quoted amount won't match what create_v2 actually
+  // charges, and the buy instruction gets rejected on-chain for exceeding
+  // its max cost. This was a real bug that caused launches to fail silently.
   const amount = getBuyTokenAmountFromSolAmount({
     global,
     feeConfig: await onlineSdk.fetchFeeConfig(),
     mintSupply: global.tokenTotalSupply,
-    bondingCurve: null as never,
+    bondingCurve: null,
     amount: initialBuySol,
     quoteMint: NATIVE_MINT,
     quoteControl: null,
-    creatorFeeBps: new BN(0),
   });
 
   return pumpSdk.createV2AndBuyInstructions({

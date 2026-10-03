@@ -10,6 +10,7 @@ import { buildBuyInstructions } from "./pumpfun";
 import { loadTokenKeypair } from "./wallet-custody";
 import { updateTokenState, type TokenRow } from "./forge-db";
 import { CARD_BUYBACK, CARD_BURN, CARD_LP } from "./forge-program";
+import { confirmOrThrow } from "./solana-tx";
 
 async function tokenBalance(connection: Connection, mint: PublicKey, owner: PublicKey) {
   const ata = getAssociatedTokenAddressSync(mint, owner);
@@ -50,7 +51,7 @@ async function buyWithPool(
   tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
   tx.sign(keypair);
   const sig = await connection.sendRawTransaction(tx.serialize());
-  await connection.confirmTransaction(sig, "confirmed");
+  await confirmOrThrow(connection, sig);
 
   const after = await tokenBalance(connection, mint, keypair.publicKey);
   const bought = after - before;
@@ -100,7 +101,7 @@ export async function executeBurn(connection: Connection, token: TokenRow) {
   tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
   tx.sign(keypair);
   const sig = await connection.sendRawTransaction(tx.serialize());
-  await connection.confirmTransaction(sig, "confirmed");
+  await confirmOrThrow(connection, sig);
 
   const burned = BigInt(token.burned_tokens) + bought;
   await updateTokenState(token.mint, { burned_tokens: burned.toString() });
