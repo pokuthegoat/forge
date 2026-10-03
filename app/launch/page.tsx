@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { Keypair, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import BN from "bn.js";
 import Link from "next/link";
 
@@ -10,6 +10,7 @@ import { buildLaunchInstructions, buildFeeSharingSetupInstructions } from "@/lib
 import { useForgeWallet } from "@/lib/useForgeWallet";
 import { getConnection } from "@/lib/solana-connection";
 import { confirmOrThrow } from "@/lib/solana-tx";
+import { WALLET_BOOTSTRAP_LAMPORTS } from "@/lib/forge-program";
 
 export default function LaunchPage() {
   const connection = getConnection();
@@ -106,13 +107,23 @@ export default function LaunchPage() {
       const { walletPubkey } = await res.json();
 
       setStatus("Setting up fee sharing...");
+      const forgeWallet = new PublicKey(walletPubkey);
       const feeSharingIxs = await buildFeeSharingSetupInstructions({
         creator: wallet.publicKey,
         mint: mint.publicKey,
-        forgeWallet: new PublicKey(walletPubkey),
+        forgeWallet,
       });
 
-      const tx2 = new Transaction().add(...feeSharingIxs);
+      // Seeds the new Forge wallet with a little SOL so it can pay the
+      // (tiny) network fee to sweep its own pump.fun creator-fee payouts
+      // later, without needing anyone else's wallet involved.
+      const bootstrapIx = SystemProgram.transfer({
+        fromPubkey: wallet.publicKey,
+        toPubkey: forgeWallet,
+        lamports: WALLET_BOOTSTRAP_LAMPORTS,
+      });
+
+      const tx2 = new Transaction().add(bootstrapIx, ...feeSharingIxs);
       tx2.feePayer = wallet.publicKey;
       tx2.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 

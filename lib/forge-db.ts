@@ -5,6 +5,7 @@ import {
   NUM_CARD_TYPES,
   NUM_SLOTS,
   EMPTY_SLOT,
+  WALLET_BOOTSTRAP_LAMPORTS,
   type TokenState,
   type VoteStateRow,
 } from "./forge-program";
@@ -73,8 +74,8 @@ export async function createToken({
   await ensureSchema();
   const wallet = generateTokenWallet();
   await db.execute({
-    sql: `INSERT INTO tokens (mint, creator, name, symbol, uri, wallet_pubkey, wallet_privkey_enc, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO tokens (mint, creator, name, symbol, uri, wallet_pubkey, wallet_privkey_enc, total_fees_received, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       mint,
       creator,
@@ -83,6 +84,9 @@ export async function createToken({
       uri,
       wallet.publicKey,
       wallet.encryptedSecretKey,
+      // Matches the launch flow's bootstrap SOL transfer so that gas-money
+      // isn't later misread as trading-fee revenue by syncFees.
+      WALLET_BOOTSTRAP_LAMPORTS.toString(),
       Date.now(),
     ],
   });

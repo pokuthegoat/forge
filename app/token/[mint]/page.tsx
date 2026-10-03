@@ -13,7 +13,7 @@ import {
   UNLOCK_THRESHOLD_LAMPORTS,
   type TokenState,
 } from "@/lib/forge-program";
-import { buildBuyInstructions, buildSellInstructions } from "@/lib/pumpfun";
+import { buildBuyInstructions, buildSellInstructions, buildDistributeFeesInstructions } from "@/lib/pumpfun";
 import { useForgeWallet } from "@/lib/useForgeWallet";
 import { getConnection } from "@/lib/solana-connection";
 import { confirmOrThrow } from "@/lib/solana-tx";
@@ -100,6 +100,22 @@ export default function TokenDashboard() {
         mint: new PublicKey(mint),
         user: wallet.publicKey,
         tokenAmount: new BN(sellAmount),
+      });
+      const tx = new Transaction().add(...ixs);
+      tx.feePayer = wallet.publicKey;
+      tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      const sig = await wallet.sendTransaction(tx, connection);
+      await confirmOrThrow(connection, sig);
+    });
+  }
+
+  async function handleSyncFees() {
+    await withStatus("Sweeping pump.fun fees...", async () => {
+      if (!wallet.publicKey) throw new Error("Connect a wallet first.");
+      const ixs = await buildDistributeFeesInstructions({
+        connection,
+        mint: new PublicKey(mint),
+        payer: wallet.publicKey,
       });
       const tx = new Transaction().add(...ixs);
       tx.feePayer = wallet.publicKey;
@@ -239,8 +255,13 @@ export default function TokenDashboard() {
             <span>{(nextThreshold / LAMPORTS_PER_SOL).toFixed(2)} SOL</span>
           </div>
           <p style={{ color: "var(--text-dim)", fontSize: 12, marginTop: 10 }}>
-            Progression and card execution sync automatically whenever this page loads.
+            Progression and card execution sync automatically whenever this page loads,
+            once the token's wallet has enough SOL to pay for it. If fees aren't showing
+            up yet, sweep them manually below (costs you a tiny network fee).
           </p>
+          <button className="btn" disabled={busy} style={{ marginTop: 10 }} onClick={handleSyncFees}>
+            Sync fees from pump.fun
+          </button>
         </div>
 
         <div className="panel">

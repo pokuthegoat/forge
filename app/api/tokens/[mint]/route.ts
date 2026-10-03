@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "@/lib/forge-db";
-import { syncFees, checkUnlock } from "@/lib/forge-engine";
+import { syncFees, checkUnlock, sweepPumpFunFees } from "@/lib/forge-engine";
 import { executeBuyback, executeBurn, executeLp } from "@/lib/card-execution";
 import { getServerConnection } from "@/lib/connection";
 import { CARD_BUYBACK, CARD_BURN, CARD_LP } from "@/lib/forge-program";
@@ -18,6 +18,7 @@ export async function GET(
   }
 
   try {
+    await sweepPumpFunFees(connection, token);
     token = await syncFees(connection, token);
     const unlockResult = await checkUnlock(token);
     token = unlockResult.token;

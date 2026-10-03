@@ -18,6 +18,12 @@ export const UNLOCK_THRESHOLD_LAMPORTS = 5_000_000_000;
  * anyone can finalize it. */
 export const VOTE_WINDOW_SECS = 60 * 60;
 
+/** Lamports sent to a new token's Forge wallet at launch so it can pay the
+ * network fee to sweep its own pump.fun creator-fee payouts later. Not
+ * trading revenue - excluded from progression tracking by seeding
+ * total_fees_received with this amount when the token row is created. */
+export const WALLET_BOOTSTRAP_LAMPORTS = 3_000_000;
+
 export interface TokenState {
   mint: string;
   creator: string;

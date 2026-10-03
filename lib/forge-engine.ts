@@ -1,5 +1,5 @@
 import "server-only";
-import { Connection, PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import {
   getMint,
   getAssociatedTokenAddressSync,
@@ -16,6 +16,44 @@ import {
   updateTokenState,
   type TokenRow,
 } from "./forge-db";
+import { buildDistributeFeesInstructions } from "./pumpfun";
+import { loadTokenKeypair } from "./wallet-custody";
+import { confirmOrThrow } from "./solana-tx";
+
+/** Minimum lamports the Forge wallet needs to self-pay the sweep's network
+ * fee. A real transaction fee is ~5000 lamports; this leaves headroom. */
+const MIN_BALANCE_TO_SWEEP = 10_000;
+
+/** Permissionless, best-effort. pump.fun doesn't push creator-fee payouts
+ * automatically - they sit in pump.fun's own internal vault until someone
+ * calls its sweep instruction. This has the token's own Forge wallet pay
+ * for and trigger that sweep using its small bootstrap SOL reserve, so
+ * fees actually land in the wallet before syncFees checks its balance.
+ * Safe to call anytime: no-ops quietly if there's nothing to sweep yet,
+ * the wallet can't afford the fee, or fee sharing isn't set up. */
+export async function sweepPumpFunFees(connection: Connection, token: TokenRow): Promise<void> {
+  const keypair = loadTokenKeypair(token.wallet_privkey_enc);
+  const balance = await connection.getBalance(keypair.publicKey);
+  if (balance < MIN_BALANCE_TO_SWEEP) return;
+
+  try {
+    const ixs = await buildDistributeFeesInstructions({
+      connection,
+      mint: new PublicKey(token.mint),
+      payer: keypair.publicKey,
+    });
+    const tx = new Transaction().add(...ixs);
+    tx.feePayer = keypair.publicKey;
+    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    tx.sign(keypair);
+    const sig = await connection.sendRawTransaction(tx.serialize());
+    await confirmOrThrow(connection, sig);
+  } catch (err) {
+    // Expected/harmless: fee sharing not set up yet, nothing to distribute,
+    // or a minimum-distributable-amount threshold not yet reached.
+    console.error(`sweepPumpFunFees no-op for ${token.mint}:`, err);
+  }
+}
 
 /** Permissionless. Reads the token's Forge wallet balance, figures out how
  * much new SOL has arrived since last sync, and splits it evenly across
