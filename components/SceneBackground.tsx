@@ -4,103 +4,92 @@ import { useEffect, useRef } from "react";
 import { createGrain } from "@/lib/grain";
 
 /**
- * The site's background: one big liquid blob (an SVG path built from points
- * placed around a circle, drawn through their midpoints so it reads as soft
- * organic curves) plus a scatter of embers drifting off it.
+ * The site's background, in layers behind the page:
  *
- *  - Scroll position morphs the blob between a handful of keyframe "poses" -
- *    driven directly by scroll offset, so scrolling back up unwinds it
- *    exactly instead of replaying an animation.
- *  - A slow independent wobble runs on top at all times, so it's never
- *    perfectly still even with the page idle.
- *  - Embers are plain CSS animations (cheap, GPU-only), unrelated to scroll -
- *    the one piece of this that's always "alive" no matter what.
+ *  0. Film grain over the whole layer.
+ *  1. Flat outline shapes (rings, squares, a pill, a dot grid) that drift at different speeds as you scroll.
+ *     They are hairlines only, never filled.
  */
 
-const POINTS = 10;
-const EMBER_COUNT = 10;
+type ShapeKind = "ring" | "square" | "dots" | "pill";
+type Shape = {
+  kind: ShapeKind;
+  x: number;
+  at: number;
+  size: number;
+  k: number;
+  spin?: number;
+};
 
-// Each keyframe is a radius multiplier per point around the blob (same
-// length, same order) - interpolating between two of these point-for-point
-// is what makes the shape "flow" from one liquid pose to the next.
-const KEYFRAMES: number[][] = [
-  [1.0, 0.8, 1.18, 0.76, 1.08, 0.86, 1.22, 0.74, 1.04, 0.92],
-  [0.84, 1.12, 0.78, 1.2, 0.8, 1.14, 0.76, 1.06, 0.96, 1.1],
-  [1.18, 0.76, 0.94, 1.06, 1.2, 0.78, 0.88, 1.12, 0.8, 1.14],
-  [0.9, 1.06, 1.12, 0.78, 0.94, 1.18, 0.84, 0.96, 1.1, 0.86],
+/* Fewer, larger shapes than before - more presence, less scattered clutter. */
+const SHAPES: Shape[] = [
+  { kind: "ring", x: 92, at: 1.2, size: 560, k: 0.7, spin: 70 },
+  { kind: "dots", x: 5, at: 3.4, size: 400, k: 0.8 },
+  { kind: "square", x: 94, at: 5.4, size: 360, k: 0.6, spin: 85 },
+  { kind: "pill", x: 4, at: 7.4, size: 480, k: 0.65 },
 ];
-
-/** Builds a smooth closed blob path from per-point radii: each point is a
- * quadratic control, and the curve passes through the midpoints between
- * consecutive points, which is what keeps the outline rounded with no
- * sharp corners no matter how the radii change. */
-function buildBlobPath(radii: number[]): string {
-  const n = radii.length;
-  const pts = radii.map((r, i) => {
-    const angle = (i / n) * Math.PI * 2;
-    return [Math.cos(angle) * r, Math.sin(angle) * r];
-  });
-  const mid = (a: number[], b: number[]) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-
-  const first = mid(pts[n - 1], pts[0]);
-  let d = `M ${first[0].toFixed(4)} ${first[1].toFixed(4)}`;
-  for (let i = 0; i < n; i++) {
-    const next = pts[(i + 1) % n];
-    const m = mid(pts[i], next);
-    d += ` Q ${pts[i][0].toFixed(4)} ${pts[i][1].toFixed(4)}, ${m[0].toFixed(4)} ${m[1].toFixed(4)}`;
-  }
-  return d + " Z";
-}
 
 export function SceneBackground({ dim = false }: { dim?: boolean }) {
   const hostRef = useRef<HTMLDivElement>(null);
-  const pathRef = useRef<SVGPathElement>(null);
+  const shapeRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     const host = hostRef.current;
-    const pathEl = pathRef.current;
-    if (!host || !pathEl) return;
+    if (!host) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const grain = createGrain(host);
-    const start = performance.now();
 
-    const draw = (now: number) => {
+    let vh = window.innerHeight;
+    const measure = () => {
+      vh = window.innerHeight;
+      grain?.resize();
+    };
+    measure();
+
+    let scrollEased = window.scrollY;
+    let last = performance.now();
+
+    const draw = (dt: number) => {
+      scrollEased += (window.scrollY - scrollEased) * Math.min(1, dt * 12);
       grain?.render();
 
-      const scrollable = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      const progress = Math.min(1, Math.max(0, window.scrollY / scrollable));
-
-      const span = KEYFRAMES.length - 1;
-      const pos = progress * span;
-      const i0 = Math.min(span - 1, Math.floor(pos));
-      const t = pos - i0;
-      const a = KEYFRAMES[i0];
-      const b = KEYFRAMES[i0 + 1];
-
-      const elapsed = reduced ? 0 : (now - start) / 1000;
-      const radii = a.map((v, i) => {
-        const base = v + (b[i] - v) * t;
-        const wobble = Math.sin(elapsed * 0.35 + i * 1.7) * 0.025;
-        return base + wobble;
+      SHAPES.forEach((s, i) => {
+        const el = shapeRefs.current[i];
+        if (!el) return;
+        const y = vh * 0.5 + (s.at * vh - scrollEased) * s.k - s.size / 2;
+        el.style.transform = `translate3d(0, ${y}px, 0)`;
       });
-
-      pathEl.setAttribute("d", buildBlobPath(radii));
     };
 
     let frame = 0;
-    const loop = (now: number) => {
-      draw(now);
+    const loop = () => {
+      const now = performance.now();
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      draw(dt);
       frame = requestAnimationFrame(loop);
     };
-    const onScroll = () => draw(performance.now());
-    const onResize = () => grain?.resize();
+    const onVisibility = () => {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      if (!document.hidden) {
+        last = performance.now();
+        frame = requestAnimationFrame(loop);
+      }
+    };
+    const onResize = () => {
+      measure();
+      if (reduced) draw(0);
+    };
+    const onScroll = () => draw(0);
 
     window.addEventListener("resize", onResize);
     if (reduced) {
-      draw(performance.now());
+      draw(0);
       window.addEventListener("scroll", onScroll, { passive: true });
     } else {
+      document.addEventListener("visibilitychange", onVisibility);
       frame = requestAnimationFrame(loop);
     }
 
@@ -108,39 +97,28 @@ export function SceneBackground({ dim = false }: { dim?: boolean }) {
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("visibilitychange", onVisibility);
       grain?.dispose();
     };
   }, [dim]);
 
   return (
     <div ref={hostRef} className={`scene-bg${dim ? " is-dim" : ""}`} aria-hidden="true">
-      <svg className="bg-blob" viewBox="-1.4 -1.4 2.8 2.8" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <radialGradient id="blobGrad" cx="48%" cy="46%" r="60%">
-            <stop offset="0%" stopColor="var(--orange)" />
-            <stop offset="55%" stopColor="var(--orange-2)" />
-            <stop offset="100%" stopColor="#0a0a0a" />
-          </radialGradient>
-        </defs>
-        <path ref={pathRef} fill="url(#blobGrad)" />
-      </svg>
-      <div className="bg-embers">
-        {Array.from({ length: EMBER_COUNT }).map((_, i) => (
-          <span
-            key={i}
-            className="ember"
-            style={
-              {
-                left: `${25 + ((i * 53) % 60)}%`,
-                bottom: `${8 + ((i * 29) % 30)}%`,
-                "--drift": `${((i % 5) - 2) * 14}px`,
-                animationDelay: `${(i * 0.9) % 8}s`,
-                animationDuration: `${5 + (i % 4)}s`,
-              } as React.CSSProperties
-            }
+      {SHAPES.map((s, i) => (
+        <div
+          key={i}
+          ref={(el) => {
+            shapeRefs.current[i] = el;
+          }}
+          className="bg-shape"
+          style={{ left: `${s.x}vw`, width: s.size, height: s.size, marginLeft: -s.size / 2 }}
+        >
+          <div
+            className={`bg-${s.kind}`}
+            style={s.spin ? { animation: `bg-spin ${s.spin}s linear infinite` } : undefined}
           />
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 }
