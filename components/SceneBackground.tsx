@@ -21,15 +21,12 @@ type Shape = {
   spin?: number;
 };
 
+/* Fewer, larger shapes than before - more presence, less scattered clutter. */
 const SHAPES: Shape[] = [
-  { kind: "ring", x: 92, at: 1.1, size: 380, k: 0.75, spin: 60 },
-  { kind: "square", x: 90, at: 2.2, size: 240, k: 0.6, spin: 90 },
-  { kind: "dots", x: 8, at: 2.6, size: 260, k: 0.8 },
-  { kind: "ring", x: 6, at: 4.2, size: 300, k: 0.7, spin: 80 },
-  { kind: "pill", x: 88, at: 5.0, size: 320, k: 0.65 },
-  { kind: "square", x: 5, at: 6.6, size: 200, k: 0.7, spin: 70 },
-  { kind: "dots", x: 90, at: 7.2, size: 240, k: 0.85 },
-  { kind: "ring", x: 92, at: 8.2, size: 340, k: 0.6, spin: 50 },
+  { kind: "ring", x: 92, at: 1.2, size: 560, k: 0.7, spin: 70 },
+  { kind: "dots", x: 5, at: 3.4, size: 400, k: 0.8 },
+  { kind: "square", x: 94, at: 5.4, size: 360, k: 0.6, spin: 85 },
+  { kind: "pill", x: 4, at: 7.4, size: 480, k: 0.65 },
 ];
 
 export function SceneBackground({ dim = false }: { dim?: boolean }) {

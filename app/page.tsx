@@ -1,17 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CARD_NAMES, NUM_SLOTS, UNLOCK_THRESHOLD_LAMPORTS } from "@/lib/forge-program";
+import { CARD_NAMES, CARD_DESCRIPTIONS, NUM_SLOTS, UNLOCK_THRESHOLD_LAMPORTS } from "@/lib/forge-program";
 import { LaunchButton, HowItWorksButton, LinkButton } from "@/components/Buttons";
 import { Faq } from "@/components/Faq";
-
-const CARD_INFO: Record<string, string> = {
-  Buyback: "Takes its cut of trading fees and buys the token on the open market, forever.",
-  Burn: "Buys the token with its fee cut, then burns it. Supply goes down, for good.",
-  LP: "Buys the token and locks it as liquidity, deepening the pool a token trades against.",
-  Reward: "Banks its fee cut in SOL. Holders claim their share, pro-rata to what they hold.",
-  Jackpot: "Banks its fee cut into a pot. One holder, picked at random, takes all of it.",
-};
 
 const UNLOCK_SOL = UNLOCK_THRESHOLD_LAMPORTS / 1e9;
 
@@ -88,7 +80,7 @@ export default function Home() {
       <section className="section" id="how-it-works">
         <div className="container">
           <div className="section-head">
-            <span className="t-eyebrow section-num">01 - Launch</span>
+            <span className="t-eyebrow section-num">Launch</span>
             <h2 className="t-h1">You launch the token. The fees do the rest.</h2>
           </div>
 
@@ -128,15 +120,15 @@ export default function Home() {
 
       <section className="section band-earn">
         <div className="container earn-inner">
-          <span className="t-eyebrow section-num">02 - Where the fees go</span>
+          <span className="t-eyebrow section-num">The deck</span>
           <div className="earn-giant">
-            <span className="earn-num">{UNLOCK_SOL}</span>
-            <span className="earn-per">SOL in cumulative fees unlocks the next card.</span>
+            <span className="earn-num">5</span>
+            <span className="earn-per">cards. Only {NUM_SLOTS} ever make the cut.</span>
           </div>
           <p className="t-lead earn-lead">
-            Every trade - buy or sell - pays a creator fee under pump.fun's own
-            rules. Forge doesn't add a fee on top; it just gives the one that
-            already exists somewhere to land.
+            Every token picks {NUM_SLOTS} of 5 - Buyback, Burn, LP, Reward, Jackpot.
+            The other two never run. That choice, made by whoever shows up to
+            vote, is what gives each token its own shape.
           </p>
         </div>
       </section>
@@ -145,7 +137,7 @@ export default function Home() {
         <div className="container">
           <div className="split">
             <div className="split-text">
-              <span className="t-eyebrow section-num">03 - What it's for</span>
+              <span className="t-eyebrow section-num">What it's for</span>
               <h2 className="t-h1">Most tokens have nothing to show for their own volume.</h2>
               <p className="t-body t-muted">
                 Fees get paid on every trade whether or not anyone benefits
@@ -174,49 +166,25 @@ export default function Home() {
       <section className="section" id="cards">
         <div className="container">
           <div className="section-head">
-            <span className="t-eyebrow section-num">04 - The cards</span>
+            <span className="t-eyebrow section-num">The cards</span>
             <h2 className="t-h1">Five cards. {NUM_SLOTS} slots. Pick a deck.</h2>
             <p className="t-lead">
-              Every card draws from the same pool of fees. Which {NUM_SLOTS} actually run
-              is the one thing every holder gets a say in.
+              Every card draws from the same pool of fees and unlocks at its own
+              tier of cumulative fees. Which {NUM_SLOTS} actually run is the one
+              thing every holder gets a say in.
             </p>
           </div>
-          <div className="cards-row">
-            {CARD_NAMES.map((name, i) => (
-              <div className="card-tile" key={name} style={{ ["--tile-color" as string]: i === 4 ? "#ffffff" : "var(--orange)" }}>
-                <span className="card-tile-num">{String(i + 1).padStart(2, "0")}</span>
-                <h3>{name}</h3>
-                <p>{CARD_INFO[name]}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="section" id="unlock-pace">
-        <div className="container">
-          <div className="section-head">
-            <span className="t-eyebrow section-num">05 - Unlock pace</span>
-            <h2 className="t-h1">Progress never resets. It only adds up.</h2>
-            <p className="t-lead">
-              Every card unlocks at a fixed multiple of {UNLOCK_SOL} SOL in
-              cumulative fees - counted from the token's first trade, not from
-              whenever someone last checked.
-            </p>
-          </div>
-          <div className="pay-table">
-            <div className="pay-row is-head">
-              <span>Card</span>
-              <span>Unlocks at</span>
-              <span>Cumulative fees</span>
+          <div className="card-table">
+            <div className="deck-roster">
+              {CARD_NAMES.map((name, i) => (
+                <div className="playing-card" key={name}>
+                  <span className="playing-card-rank">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="playing-card-name">{name}</span>
+                  <span className="playing-card-desc">{CARD_DESCRIPTIONS[name]}</span>
+                  <span className="playing-card-status">Unlocks at {UNLOCK_SOL * (i + 1)} SOL</span>
+                </div>
+              ))}
             </div>
-            {CARD_NAMES.map((name, i) => (
-              <div className="pay-row" key={name}>
-                <span><b>{name}</b></span>
-                <span>Tier {i + 1}</span>
-                <span className="amt">{UNLOCK_SOL * (i + 1)} SOL</span>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -225,7 +193,7 @@ export default function Home() {
         <div className="container">
           <div className="split">
             <div className="split-text">
-              <span className="t-eyebrow section-num">06 - Trading happens on pump.fun</span>
+              <span className="t-eyebrow section-num">Trading happens on pump.fun</span>
               <h2 className="t-h1">Forge doesn't run the market. It just watches the fees.</h2>
               <p className="t-body t-muted">
                 Every buy and sell goes straight through pump.fun's own bonding
@@ -283,7 +251,7 @@ export default function Home() {
       <section className="section" id="faq">
         <div className="container">
           <div className="section-head">
-            <span className="t-eyebrow section-num">07 - FAQ</span>
+            <span className="t-eyebrow section-num">FAQ</span>
             <h2 className="t-h1">Questions, answered plainly.</h2>
           </div>
           <Faq items={FAQ_ITEMS} />

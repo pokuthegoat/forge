@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createToken } from "@/lib/forge-db";
+import { createToken, listTokens } from "@/lib/forge-db";
+
+export async function GET(req: NextRequest) {
+  const search = req.nextUrl.searchParams.get("q") ?? undefined;
+  const tokens = await listTokens(search);
+  const publicTokens = tokens.map(({ wallet_privkey_enc: _unused, ...t }) => {
+    void _unused;
+    return t;
+  });
+  return NextResponse.json(publicTokens);
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.json();

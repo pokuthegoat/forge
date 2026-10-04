@@ -5,7 +5,7 @@ import { db, ensureSchema } from "@/lib/db";
 const MAX_IMAGE_BYTES = 2_000_000;
 
 export async function POST(req: NextRequest) {
-  const { name, symbol, description, imageDataUri } = await req.json();
+  const { name, symbol, description, imageDataUri, website, twitter, telegram } = await req.json();
 
   if (!name || !symbol || !imageDataUri) {
     return NextResponse.json({ error: "Missing name, symbol, or image" }, { status: 400 });
@@ -24,6 +24,9 @@ export async function POST(req: NextRequest) {
     symbol,
     description: description ?? "",
     image: imageDataUri,
+    ...(website ? { website } : {}),
+    ...(twitter ? { twitter } : {}),
+    ...(telegram ? { telegram } : {}),
   });
 
   await db.execute({

@@ -21,6 +21,9 @@ export default function LaunchPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [initialBuy, setInitialBuy] = useState("0.1");
+  const [website, setWebsite] = useState("");
+  const [twitter, setTwitter] = useState("");
+  const [telegram, setTelegram] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -57,7 +60,7 @@ export default function LaunchPage() {
       const metadataRes = await fetch("/api/metadata", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, symbol, imageDataUri }),
+        body: JSON.stringify({ name, symbol, imageDataUri, website, twitter, telegram }),
       });
       if (!metadataRes.ok) {
         const { error } = await metadataRes.json();
@@ -154,43 +157,97 @@ export default function LaunchPage() {
           </p>
         </section>
 
-        <div className="panel">
-          <h3>Token details</h3>
-          <div style={{ display: "grid", gap: 14 }}>
-            <input
-              className="input"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <input
-              className="input"
-              placeholder="Symbol"
-              value={symbol}
-              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-            />
-            <div>
+        <div className="split" style={{ alignItems: "start" }}>
+          <div className="panel" style={{ marginBottom: 0 }}>
+            <h3>Token details</h3>
+            <div style={{ display: "grid", gap: 14 }}>
               <input
-                type="file"
-                accept="image/png,image/jpeg,image/gif,image/webp"
-                onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
+                className="input"
+                placeholder="Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
               />
-              {imagePreview && (
-                <img
-                  src={imagePreview}
-                  alt="Token preview"
-                  style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 10, marginTop: 10 }}
+              <input
+                className="input"
+                placeholder="Symbol"
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+              />
+              <div>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/gif,image/webp"
+                  onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
                 />
-              )}
+              </div>
+              <input
+                className="input"
+                placeholder="Initial buy (SOL)"
+                value={initialBuy}
+                onChange={(e) => setInitialBuy(e.target.value)}
+              />
             </div>
-            <input
-              className="input"
-              placeholder="Initial buy (SOL)"
-              value={initialBuy}
-              onChange={(e) => setInitialBuy(e.target.value)}
-            />
+          </div>
+
+          <div style={{ display: "grid", gap: 20 }}>
+            <div className="panel" style={{ marginBottom: 0 }}>
+              <h3>Preview</h3>
+              <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Token preview"
+                    style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 10, flex: "none" }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: 10,
+                      border: "1px dashed var(--line-strong)",
+                      flex: "none",
+                    }}
+                  />
+                )}
+                <div>
+                  <div style={{ fontFamily: "var(--font-head)", fontSize: 19, fontWeight: 500 }}>
+                    {name || "Token name"}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--muted)" }}>
+                    {symbol ? `$${symbol}` : "$SYMBOL"}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="panel" style={{ marginBottom: 0 }}>
+              <h3>Links (optional)</h3>
+              <div style={{ display: "grid", gap: 14 }}>
+                <input
+                  className="input"
+                  placeholder="Website"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                />
+                <input
+                  className="input"
+                  placeholder="X (Twitter)"
+                  value={twitter}
+                  onChange={(e) => setTwitter(e.target.value)}
+                />
+                <input
+                  className="input"
+                  placeholder="Telegram"
+                  value={telegram}
+                  onChange={(e) => setTelegram(e.target.value)}
+                />
+              </div>
+            </div>
+
             <button
               className="btn btn-primary"
+              style={{ width: "100%" }}
               disabled={busy || !name || !symbol || !imageFile}
               onClick={handleLaunch}
             >

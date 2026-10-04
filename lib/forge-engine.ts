@@ -9,11 +9,16 @@ import {
   CARD_REWARD,
   EMPTY_SLOT,
   NUM_CARD_TYPES,
+  NUM_SLOTS,
   UNLOCK_THRESHOLD_LAMPORTS,
+  VOTE_WINDOW_SECS,
 } from "./forge-program";
 import {
   getToken,
   updateTokenState,
+  getVoteState,
+  startVote,
+  closeVote,
   type TokenRow,
 } from "./forge-db";
 import { buildDistributeFeesInstructions } from "./pumpfun";
@@ -126,6 +131,49 @@ export function pickVoteWinner(
     }
   }
   return winner;
+}
+
+/** Permissionless, lazy (checked on page load, no real server timer).
+ * For every open slot: opens a vote automatically the moment there's an
+ * eligible unlocked-and-unequipped card, and - once that vote has been
+ * open for VOTE_WINDOW_SECS - locks in whichever card currently has the
+ * most votes. No manual start/finalize action needed from anyone. */
+export async function autoManageVotes(token: TokenRow): Promise<TokenRow> {
+  let current = token;
+
+  for (let slotIndex = 0; slotIndex < NUM_SLOTS; slotIndex++) {
+    if (current.slots[slotIndex] !== EMPTY_SLOT) continue;
+
+    const hasCandidate = Array.from({ length: current.cards_unlocked }).some(
+      (_, cardId) => !current.card_equipped[cardId]
+    );
+    if (!hasCandidate) continue;
+
+    const vote = await getVoteState(current.mint, slotIndex);
+    if (!vote) {
+      await startVote(current.mint, slotIndex);
+      continue;
+    }
+    if (!vote.is_open) continue;
+
+    const now = Math.floor(Date.now() / 1000);
+    if (now < vote.start_ts + VOTE_WINDOW_SECS) continue;
+
+    const winner = pickVoteWinner(current, vote.vote_counts);
+    if (winner === null) continue;
+
+    const slots = [...current.slots];
+    slots[slotIndex] = winner;
+    const cardEquipped = [...current.card_equipped];
+    cardEquipped[winner] = true;
+
+    await updateTokenState(current.mint, { slots, card_equipped: cardEquipped });
+    await closeVote(current.mint, slotIndex);
+
+    current = { ...current, slots, card_equipped: cardEquipped };
+  }
+
+  return current;
 }
 
 /** Pro-rata reward payout for a holder, against the current Reward card

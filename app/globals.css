@@ -126,6 +126,7 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 .btn svg { width: 15px; height: 15px; flex: none; transition: transform 0.2s; }
 .btn:hover svg { transform: translateX(3px); }
 
+.btn { background: transparent; color: var(--white); }
 .btn-primary { background: var(--white); color: var(--bg); border-color: var(--white); }
 .btn-primary:hover { background: var(--orange); color: var(--bg); border-color: var(--orange); }
 .btn-outline { background: transparent; color: var(--white); }
@@ -382,27 +383,7 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 
 .fine { font-family: var(--font-code); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--subtle); line-height: 1.6; }
 
-/* The five cards (section 04): one bordered strip of cells, each a real card from the deck */
-.cards-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 48px; border: 1px solid var(--line-strong); }
-.card-tile { display: flex; flex-direction: column; gap: 14px; padding: 22px 20px; min-height: 270px; position: relative; overflow: hidden; }
-.card-tile::before { content: ""; position: absolute; inset: 0; background: var(--tile-color, var(--orange)); opacity: 0.1; }
-.card-tile + .card-tile { border-left: 1px solid var(--line-strong); }
-.card-tile-num { align-self: flex-start; padding: 4px 7px; background: var(--tile-color, var(--orange)); color: var(--bg); font-family: var(--font-code); font-size: 11.5px; position: relative; }
-.card-tile h3 { font-family: var(--font-head); font-size: 24px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1; position: relative; }
-.card-tile p { margin-top: auto; font-size: 15.5px; line-height: 1.45; color: var(--muted); position: relative; }
-@media (max-width: 1100px) {
-  .cards-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .card-tile { min-height: 0; border-bottom: 1px solid var(--line-strong); }
-  .card-tile + .card-tile { border-left: 0; }
-  .card-tile:nth-child(even) { border-left: 1px solid var(--line-strong); }
-  .card-tile p { margin-top: 10px; }
-}
-@media (max-width: 640px) {
-  .cards-row { grid-template-columns: 1fr; }
-  .card-tile:nth-child(even) { border-left: 0; }
-}
-
-/* Unlock-pace table (section 05) */
+/* Unlock-pace table (used on /coins) */
 .pay-table { display: flex; flex-direction: column; margin-top: 44px; border: 1px solid var(--line-strong); }
 .pay-row {
   display: grid;
@@ -654,3 +635,162 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 .status-locked { background: #ffffff1a; color: var(--muted); }
 .status-unlocked { background: #3d2a0a; color: #ffd87a; }
 .status-equipped { background: #0f3a1f; color: #6bffa0; }
+
+/* ------------------------------------------------------------------
+   Token dashboard (app/token/[mint]): trade link-out, the card table
+   (slots + roster), and role-gated action panels.
+------------------------------------------------------------------- */
+
+.trade-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font-code);
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  transition: border-color 0.15s, color 0.15s;
+}
+.trade-link:hover { border-color: var(--orange); color: var(--orange); }
+.trade-link svg { width: 15px; height: 15px; }
+
+.token-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+/* The card table: a recessed strip holding the 3 equip slots up top and
+   the 5-card roster below, visually distinct from the rest of the page
+   so it reads as a table, not another form panel. */
+.card-table {
+  border: 1px solid var(--line-strong);
+  background: #050505;
+  padding: clamp(22px, 3.4vw, 44px) clamp(14px, 3vw, 28px);
+  margin-bottom: 20px;
+}
+
+.table-slots {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: clamp(32px, 5vw, 56px);
+}
+.table-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 128px;
+  padding: 14px 16px;
+  border: 1px dashed var(--line-strong);
+}
+.table-slot.is-filled { border-style: solid; border-color: var(--orange); }
+.table-slot-label { font-family: var(--font-code); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--subtle); }
+.table-slot-value { font-family: var(--font-head); font-size: 18px; font-weight: 500; }
+.table-slot-value.is-empty { font-family: var(--font-code); font-size: 12.5px; font-weight: 400; color: var(--muted); }
+
+.deck-roster {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+/* Playing-card shaped (portrait, rounded, shadowed) - deliberately breaks
+   the design system's square-corner rule because the card metaphor needs it. */
+.playing-card {
+  --card-w: clamp(118px, 13.5vw, 172px);
+  width: var(--card-w);
+  aspect-ratio: 5 / 7.4;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 12px 10px;
+  position: relative;
+  text-align: center;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.playing-card + .playing-card { margin-left: -16px; }
+.playing-card:hover { transform: translateY(-10px); z-index: 5; }
+
+.playing-card.is-locked {
+  background: repeating-linear-gradient(135deg, #0d0d0d 0 8px, #060606 8px 16px);
+  color: var(--subtle);
+}
+.playing-card.is-equipped {
+  transform: translateY(-20px);
+  border-color: var(--orange);
+  box-shadow: 0 0 0 1px var(--orange), 0 18px 34px rgba(0, 0, 0, 0.6);
+  z-index: 6;
+}
+.playing-card.is-equipped:hover { transform: translateY(-28px); }
+
+.playing-card-rank { font-family: var(--font-code); font-size: 11px; letter-spacing: 0.02em; color: var(--subtle); align-self: flex-start; }
+.playing-card-name { font-family: var(--font-head); font-size: 13.5px; font-weight: 500; line-height: 1.15; }
+.playing-card-desc {
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--muted);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+.playing-card.is-locked .playing-card-desc { color: var(--subtle); }
+.playing-card-status { margin-top: auto; font-family: var(--font-code); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--subtle); }
+.playing-card-vote {
+  width: 100%;
+  height: 28px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--white);
+  font-family: var(--font-code);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.playing-card-vote:hover { background: var(--orange); border-color: var(--orange); color: var(--bg); }
+.playing-card-vote[disabled] { opacity: 0.35; cursor: default; }
+
+@media (max-width: 640px) {
+  .playing-card + .playing-card { margin-left: -24px; }
+}
+
+/* Public vs creator action panels - mutually exclusive, never both shown. */
+.role-panel-public { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 640px) { .role-panel-public { grid-template-columns: 1fr; } }
+
+.role-panel-creator {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px dashed var(--line-strong);
+}
+.role-panel-creator-label {
+  width: 100%;
+  font-family: var(--font-code);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--subtle);
+  margin-bottom: 2px;
+}
+
+/* ---------- Launched-coins directory (/coins) ---------- */
+
+a.pay-row { cursor: pointer; transition: background-color 0.15s; }
+a.pay-row:hover { background: #ffffff0d; }
