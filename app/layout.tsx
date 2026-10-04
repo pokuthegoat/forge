@@ -1,15 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Instrument_Sans, JetBrains_Mono } from "next/font/google";
+import { Geist_Mono, DM_Sans } from "next/font/google";
 import { Providers } from "./providers";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { SceneBackground } from "@/components/SceneBackground";
 import { Nav } from "@/components/Nav";
 import "./globals.css";
 
-/** Headlines: Geist, set light and tight. Body: Instrument Sans. Labels, numbers, nav: JetBrains Mono. */
-const display = Geist({ subsets: ["latin"], variable: "--font-display", display: "swap" });
-const sans = Instrument_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-sans", display: "swap" });
-const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono", display: "swap" });
+/** Headlines and labels: Geist Mono, the same font IdleNet uses on its button - applied everywhere, not just
+ * code/labels. Body/paragraph text: DM Sans, matched from IdleNet's own headings and copy. */
+const display = Geist_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-display", display: "swap" });
+const sans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sans", display: "swap" });
+const mono = Geist_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Forge",

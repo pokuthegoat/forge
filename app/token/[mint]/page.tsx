@@ -8,6 +8,8 @@ import {
   CARD_DESCRIPTIONS,
   CARD_REWARD,
   CARD_JACKPOT,
+  CARD_NUMERALS,
+  CARD_TICKERS,
   EMPTY_SLOT,
   NUM_SLOTS,
   UNLOCK_THRESHOLD_LAMPORTS,
@@ -18,6 +20,8 @@ import { useForgeWallet } from "@/lib/useForgeWallet";
 import { getConnection } from "@/lib/solana-connection";
 import { confirmOrThrow } from "@/lib/solana-tx";
 import { Arrow } from "@/components/Buttons";
+import { Window } from "@/components/Window";
+import { SegmentedMeter } from "@/components/SegmentedMeter";
 import { PublicKey, Transaction } from "@solana/web3.js";
 
 const LAMPORTS_PER_SOL = 1_000_000_000;
@@ -149,15 +153,18 @@ export default function TokenDashboard() {
     return (
       <main className="app-main">
         <div className="container">
-          <div className="panel">
+          <Window title="LOADING.SYS">
             <p>Loading this token's Forge state (or it hasn't been launched through Forge)...</p>
-          </div>
+          </Window>
         </div>
       </main>
     );
   }
 
   const nextThreshold = (token.cards_unlocked + 1) * UNLOCK_THRESHOLD_LAMPORTS;
+  const prevThreshold = token.cards_unlocked * UNLOCK_THRESHOLD_LAMPORTS;
+  const unlockProgress =
+    (Number(token.total_fees_received) - prevThreshold) / (nextThreshold - prevThreshold);
   const openSlotIndex = token.slots.findIndex((s) => s === EMPTY_SLOT);
 
   return (
@@ -190,8 +197,7 @@ export default function TokenDashboard() {
           <Arrow />
         </a>
 
-        <div className="panel">
-          <h3>Progression</h3>
+        <Window title="PROGRESSION.DAT">
           <div className="stat">
             <span>Total fees received</span>
             <span>{(Number(token.total_fees_received) / LAMPORTS_PER_SOL).toFixed(4)} SOL</span>
@@ -204,7 +210,15 @@ export default function TokenDashboard() {
             <span>Next unlock at</span>
             <span>{(nextThreshold / LAMPORTS_PER_SOL).toFixed(2)} SOL</span>
           </div>
-        </div>
+          <SegmentedMeter progress={unlockProgress} />
+          <div className="pipeline">
+            <span className="pipeline-step">Fees swept</span>
+            <span className="pipeline-arrow">›</span>
+            <span className="pipeline-step">Split evenly</span>
+            <span className="pipeline-arrow">›</span>
+            <span className="pipeline-step">Card pools</span>
+          </div>
+        </Window>
 
         <div className="card-table">
           <div className="table-slots">
@@ -232,7 +246,10 @@ export default function TokenDashboard() {
                   key={name}
                   className={`playing-card${!unlocked ? " is-locked" : ""}${equipped ? " is-equipped" : ""}`}
                 >
-                  <span className="playing-card-rank">{String(cardId + 1).padStart(2, "0")}</span>
+                  <div className="playing-card-top">
+                    <span className="playing-card-rank">{CARD_NUMERALS[cardId]}</span>
+                    <span className="ticker-tag">{CARD_TICKERS[cardId]}</span>
+                  </div>
                   <span className="playing-card-name">{name}</span>
                   <span className="playing-card-desc">{CARD_DESCRIPTIONS[name]}</span>
                   <span className="playing-card-status">
@@ -269,8 +286,7 @@ export default function TokenDashboard() {
           </div>
         ) : (
           <div className="role-panel-public">
-            <div className="panel" style={{ marginBottom: 0 }}>
-              <h3>Reward</h3>
+            <Window title="REWARD.CLM" style={{ marginBottom: 0 }}>
               <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>
                 Claim your pro-rata share of the Reward card's pool.
               </p>
@@ -281,9 +297,8 @@ export default function TokenDashboard() {
               >
                 Claim reward
               </button>
-            </div>
-            <div className="panel" style={{ marginBottom: 0 }}>
-              <h3>Jackpot</h3>
+            </Window>
+            <Window title="JACKPOT.BIN" style={{ marginBottom: 0 }}>
               <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>
                 Pool: {(Number(token.card_pools[4]) / LAMPORTS_PER_SOL).toFixed(4)} SOL · Round {token.jackpot_round}
               </p>
@@ -294,7 +309,7 @@ export default function TokenDashboard() {
               >
                 Enter jackpot
               </button>
-            </div>
+            </Window>
           </div>
         )}
       </div>

@@ -18,6 +18,12 @@ export const NUM_SLOTS = 3;
 export const NUM_CARD_TYPES = 5;
 export const EMPTY_SLOT = 255;
 
+/** Card rank shown as a tarot-style roman numeral instead of a plain 01-05 count. */
+export const CARD_NUMERALS = ["I", "II", "III", "IV", "V"] as const;
+
+/** A short ticker-style tag per card, like a stock symbol next to a line item. */
+export const CARD_TICKERS = ["BUY", "BRN", "LP", "RWD", "JKP"] as const;
+
 /** Lamports of cumulative trading fees that must have landed in a token's
  * Forge wallet, per tier, before the next card unlocks. */
 export const UNLOCK_THRESHOLD_LAMPORTS = 1_000_000_000;

@@ -6,6 +6,7 @@ import { Keypair, PublicKey, SystemProgram, Transaction } from "@solana/web3.js"
 import BN from "bn.js";
 
 import { buildLaunchInstructions, buildFeeSharingSetupInstructions } from "@/lib/pumpfun";
+import { Window } from "@/components/Window";
 import { useForgeWallet } from "@/lib/useForgeWallet";
 import { getConnection } from "@/lib/solana-connection";
 import { confirmOrThrow } from "@/lib/solana-tx";
@@ -157,9 +158,8 @@ export default function LaunchPage() {
           </p>
         </section>
 
-        <div className="split" style={{ alignItems: "start" }}>
-          <div className="panel" style={{ marginBottom: 0 }}>
-            <h3>Token details</h3>
+        <div style={{ maxWidth: 560, margin: "0 auto" }}>
+          <Window title="DECK.EXE - Token Details" style={{ marginBottom: 20 }}>
             <div style={{ display: "grid", gap: 14 }}>
               <input
                 className="input"
@@ -187,11 +187,10 @@ export default function LaunchPage() {
                 onChange={(e) => setInitialBuy(e.target.value)}
               />
             </div>
-          </div>
+          </Window>
 
           <div style={{ display: "grid", gap: 20 }}>
-            <div className="panel" style={{ marginBottom: 0 }}>
-              <h3>Preview</h3>
+            <Window title="PREVIEW.BMP">
               <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
                 {imagePreview ? (
                   <img
@@ -219,10 +218,9 @@ export default function LaunchPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Window>
 
-            <div className="panel" style={{ marginBottom: 0 }}>
-              <h3>Links (optional)</h3>
+            <Window title="LINKS.CFG">
               <div style={{ display: "grid", gap: 14 }}>
                 <input
                   className="input"
@@ -243,7 +241,7 @@ export default function LaunchPage() {
                   onChange={(e) => setTelegram(e.target.value)}
                 />
               </div>
-            </div>
+            </Window>
 
             <button
               className="btn btn-primary"
