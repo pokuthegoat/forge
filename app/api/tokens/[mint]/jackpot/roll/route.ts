@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import nacl from "tweetnacl";
-import { getToken, listJackpotEntrants, updateTokenState } from "@/lib/forge-db";
+import { getToken, listJackpotEntrants, updateTokenState, claimJackpotIfUnchanged } from "@/lib/forge-db";
 import { loadTokenKeypair } from "@/lib/wallet-custody";
 import { getServerConnection } from "@/lib/connection";
 import { CARD_JACKPOT } from "@/lib/forge-program";
@@ -48,28 +48,49 @@ export async function POST(
   const seed = Date.now() ^ token.jackpot_round;
   const winner = entrants[seed % entrants.length];
 
+  // Claim this round's pool atomically before paying out, so a double-click
+  // or retry can't roll (and pay) the same round twice.
+  const claimed = await claimJackpotIfUnchanged(
+    mint,
+    CARD_JACKPOT,
+    token.card_pools[CARD_JACKPOT],
+    token.jackpot_round
+  );
+  if (!claimed) {
+    return NextResponse.json({ error: "This round was already rolled" }, { status: 400 });
+  }
+
   const keypair = loadTokenKeypair(token.wallet_privkey_enc);
   const connection = getServerConnection();
-  const tx = new Transaction().add(
-    SystemProgram.transfer({
-      fromPubkey: keypair.publicKey,
-      toPubkey: new PublicKey(winner),
-      lamports: Number(payout),
-    })
-  );
-  tx.feePayer = keypair.publicKey;
-  const blockhash = await connection.getLatestBlockhash();
-  tx.recentBlockhash = blockhash.blockhash;
-  tx.sign(keypair);
-  const sig = await connection.sendRawTransaction(tx.serialize());
-  await confirmOrThrow(connection, sig, blockhash);
 
-  const cardPools = token.card_pools.map((p) => BigInt(p));
-  cardPools[CARD_JACKPOT] = 0n;
-  await updateTokenState(mint, {
-    card_pools: cardPools.map((p) => p.toString()),
-    jackpot_round: token.jackpot_round + 1,
-  });
+  try {
+    const tx = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: keypair.publicKey,
+        toPubkey: new PublicKey(winner),
+        lamports: Number(payout),
+      })
+    );
+    tx.feePayer = keypair.publicKey;
+    const blockhash = await connection.getLatestBlockhash();
+    tx.recentBlockhash = blockhash.blockhash;
+    tx.sign(keypair);
+    const sig = await connection.sendRawTransaction(tx.serialize());
+    await confirmOrThrow(connection, sig, blockhash);
 
-  return NextResponse.json({ ok: true, winner, signature: sig });
+    return NextResponse.json({ ok: true, winner, signature: sig });
+  } catch (err) {
+    // Payout didn't actually go through but we already claimed the round -
+    // put the pool back and roll back the round number so it can be retried.
+    const fresh = await getToken(mint);
+    if (fresh) {
+      const pools = fresh.card_pools.map((p) => BigInt(p));
+      pools[CARD_JACKPOT] += payout;
+      await updateTokenState(mint, {
+        card_pools: pools.map((p) => p.toString()),
+        jackpot_round: token.jackpot_round,
+      });
+    }
+    throw err;
+  }
 }

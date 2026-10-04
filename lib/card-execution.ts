@@ -8,7 +8,7 @@ import {
 import BN from "bn.js";
 import { buildBuyInstructions } from "./pumpfun";
 import { loadTokenKeypair } from "./wallet-custody";
-import { updateTokenState, type TokenRow } from "./forge-db";
+import { getToken, updateTokenState, claimCardPoolIfUnchanged, type TokenRow } from "./forge-db";
 import { CARD_BUYBACK, CARD_BURN, CARD_LP } from "./forge-program";
 import { confirmOrThrow } from "./solana-tx";
 
@@ -31,37 +31,51 @@ async function buyWithPool(
   token: TokenRow,
   cardId: number
 ): Promise<bigint> {
-  const pool = BigInt(token.card_pools[cardId]);
+  const poolStr = token.card_pools[cardId];
+  const pool = BigInt(poolStr);
   if (pool === 0n) return 0n;
 
-  const keypair = loadTokenKeypair(token.wallet_privkey_enc);
-  const mint = new PublicKey(token.mint);
+  // Claim this batch of fees atomically before spending it, so a second
+  // concurrent trigger reading the same pool amount can't also fire a real
+  // buy off the same SOL. If the claim fails, something else already took it.
+  const claimed = await claimCardPoolIfUnchanged(token.mint, cardId, poolStr);
+  if (!claimed) return 0n;
 
-  const before = await tokenBalance(connection, mint, keypair.publicKey);
+  try {
+    const keypair = loadTokenKeypair(token.wallet_privkey_enc);
+    const mint = new PublicKey(token.mint);
 
-  const ixs = await buildBuyInstructions({
-    connection,
-    mint,
-    user: keypair.publicKey,
-    solAmount: new BN(pool.toString()),
-  });
+    const before = await tokenBalance(connection, mint, keypair.publicKey);
 
-  const tx = new Transaction().add(...ixs);
-  tx.feePayer = keypair.publicKey;
-  const blockhash = await connection.getLatestBlockhash();
-  tx.recentBlockhash = blockhash.blockhash;
-  tx.sign(keypair);
-  const sig = await connection.sendRawTransaction(tx.serialize());
-  await confirmOrThrow(connection, sig, blockhash);
+    const ixs = await buildBuyInstructions({
+      connection,
+      mint,
+      user: keypair.publicKey,
+      solAmount: new BN(pool.toString()),
+    });
 
-  const after = await tokenBalance(connection, mint, keypair.publicKey);
-  const bought = after - before;
+    const tx = new Transaction().add(...ixs);
+    tx.feePayer = keypair.publicKey;
+    const blockhash = await connection.getLatestBlockhash();
+    tx.recentBlockhash = blockhash.blockhash;
+    tx.sign(keypair);
+    const sig = await connection.sendRawTransaction(tx.serialize());
+    await confirmOrThrow(connection, sig, blockhash);
 
-  const cardPools = token.card_pools.map((p) => BigInt(p));
-  cardPools[cardId] = 0n;
-  await updateTokenState(token.mint, { card_pools: cardPools.map((p) => p.toString()) });
-
-  return bought;
+    const after = await tokenBalance(connection, mint, keypair.publicKey);
+    return after - before;
+  } catch (err) {
+    // The buy didn't actually go through but we already claimed the pool -
+    // put it back so these fees aren't silently stranded, then let the
+    // caller's existing error handling log the failure as before.
+    const fresh = await getToken(token.mint);
+    if (fresh) {
+      const pools = fresh.card_pools.map((p) => BigInt(p));
+      pools[cardId] += pool;
+      await updateTokenState(token.mint, { card_pools: pools.map((p) => p.toString()) });
+    }
+    throw err;
+  }
 }
 
 /** Buyback: buys tokens with its pool, locks them forever (never sold). */
