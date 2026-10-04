@@ -44,10 +44,11 @@ export async function sweepPumpFunFees(connection: Connection, token: TokenRow):
     });
     const tx = new Transaction().add(...ixs);
     tx.feePayer = keypair.publicKey;
-    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    const blockhash = await connection.getLatestBlockhash();
+    tx.recentBlockhash = blockhash.blockhash;
     tx.sign(keypair);
     const sig = await connection.sendRawTransaction(tx.serialize());
-    await confirmOrThrow(connection, sig);
+    await confirmOrThrow(connection, sig, blockhash);
   } catch (err) {
     // Expected/harmless: fee sharing not set up yet, nothing to distribute,
     // or a minimum-distributable-amount threshold not yet reached.

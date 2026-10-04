@@ -80,12 +80,13 @@ export default function LaunchPage() {
 
       const tx1 = new Transaction().add(...launchIxs);
       tx1.feePayer = wallet.publicKey;
-      tx1.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      const blockhash1 = await connection.getLatestBlockhash();
+      tx1.recentBlockhash = blockhash1.blockhash;
       tx1.partialSign(mint);
 
       setStatus("Confirm the launch transaction in your wallet...");
       const sig1 = await wallet.sendTransaction(tx1, connection);
-      await confirmOrThrow(connection, sig1);
+      await confirmOrThrow(connection, sig1, blockhash1);
 
       setStatus("Registering token with Forge...");
       const res = await fetch("/api/tokens", {
@@ -124,11 +125,12 @@ export default function LaunchPage() {
 
       const tx2 = new Transaction().add(bootstrapIx, ...feeSharingIxs);
       tx2.feePayer = wallet.publicKey;
-      tx2.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      const blockhash2 = await connection.getLatestBlockhash();
+      tx2.recentBlockhash = blockhash2.blockhash;
 
       setStatus("Confirm the fee-sharing transaction in your wallet...");
       const sig2 = await wallet.sendTransaction(tx2, connection);
-      await confirmOrThrow(connection, sig2);
+      await confirmOrThrow(connection, sig2, blockhash2);
 
       setStatus("Launched! Redirecting...");
       router.push(`/token/${mint.publicKey.toBase58()}`);

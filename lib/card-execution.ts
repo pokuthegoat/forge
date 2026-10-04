@@ -48,10 +48,11 @@ async function buyWithPool(
 
   const tx = new Transaction().add(...ixs);
   tx.feePayer = keypair.publicKey;
-  tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+  const blockhash = await connection.getLatestBlockhash();
+  tx.recentBlockhash = blockhash.blockhash;
   tx.sign(keypair);
   const sig = await connection.sendRawTransaction(tx.serialize());
-  await confirmOrThrow(connection, sig);
+  await confirmOrThrow(connection, sig, blockhash);
 
   const after = await tokenBalance(connection, mint, keypair.publicKey);
   const bought = after - before;
@@ -98,10 +99,11 @@ export async function executeBurn(connection: Connection, token: TokenRow) {
   const burnIx = createBurnInstruction(ata, mint, keypair.publicKey, bought);
   const tx = new Transaction().add(burnIx);
   tx.feePayer = keypair.publicKey;
-  tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+  const blockhash = await connection.getLatestBlockhash();
+  tx.recentBlockhash = blockhash.blockhash;
   tx.sign(keypair);
   const sig = await connection.sendRawTransaction(tx.serialize());
-  await confirmOrThrow(connection, sig);
+  await confirmOrThrow(connection, sig, blockhash);
 
   const burned = BigInt(token.burned_tokens) + bought;
   await updateTokenState(token.mint, { burned_tokens: burned.toString() });

@@ -58,10 +58,11 @@ export async function POST(
     })
   );
   tx.feePayer = keypair.publicKey;
-  tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+  const blockhash = await connection.getLatestBlockhash();
+  tx.recentBlockhash = blockhash.blockhash;
   tx.sign(keypair);
   const sig = await connection.sendRawTransaction(tx.serialize());
-  await confirmOrThrow(connection, sig);
+  await confirmOrThrow(connection, sig, blockhash);
 
   const cardPools = token.card_pools.map((p) => BigInt(p));
   cardPools[CARD_JACKPOT] = 0n;

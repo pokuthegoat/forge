@@ -85,9 +85,10 @@ export default function TokenDashboard() {
       });
       const tx = new Transaction().add(...ixs);
       tx.feePayer = wallet.publicKey;
-      tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      const blockhash = await connection.getLatestBlockhash();
+      tx.recentBlockhash = blockhash.blockhash;
       const sig = await wallet.sendTransaction(tx, connection);
-      await confirmOrThrow(connection, sig);
+      await confirmOrThrow(connection, sig, blockhash);
     });
   }
 
@@ -102,9 +103,10 @@ export default function TokenDashboard() {
       });
       const tx = new Transaction().add(...ixs);
       tx.feePayer = wallet.publicKey;
-      tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      const blockhash = await connection.getLatestBlockhash();
+      tx.recentBlockhash = blockhash.blockhash;
       const sig = await wallet.sendTransaction(tx, connection);
-      await confirmOrThrow(connection, sig);
+      await confirmOrThrow(connection, sig, blockhash);
     });
   }
 
@@ -118,9 +120,10 @@ export default function TokenDashboard() {
       });
       const tx = new Transaction().add(...ixs);
       tx.feePayer = wallet.publicKey;
-      tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      const blockhash = await connection.getLatestBlockhash();
+      tx.recentBlockhash = blockhash.blockhash;
       const sig = await wallet.sendTransaction(tx, connection);
-      await confirmOrThrow(connection, sig);
+      await confirmOrThrow(connection, sig, blockhash);
     });
   }
 
