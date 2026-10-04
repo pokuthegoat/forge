@@ -178,21 +178,35 @@ img, svg, video, canvas { display: block; max-width: 100%; }
   background: var(--bg);
   pointer-events: none;
 }
-.bg-shape { position: absolute; top: 0; will-change: transform; }
-.bg-shape > div { width: 100%; height: 100%; }
-.bg-ring { border-radius: 50%; border: 1px solid var(--line-strong); }
-.bg-square { border: 1px solid var(--line-strong); }
-.bg-pill { border: 1px solid var(--line-strong); border-radius: 999px; height: 44% !important; margin-top: 28%; }
-.bg-dots {
-  background-image: radial-gradient(circle, var(--line-strong) 1.3px, transparent 1.6px);
-  background-size: 22px 22px;
-  opacity: 0.6;
+.bg-blob {
+  position: absolute;
+  inset: -20%;
+  width: 140%;
+  height: 140%;
+  opacity: 0.4;
 }
-@keyframes bg-spin { to { transform: rotate(360deg); } }
+
+.bg-embers { position: absolute; inset: 0; overflow: hidden; }
+.ember {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 0 6px 1px var(--orange);
+  opacity: 0;
+  animation: ember-rise linear infinite;
+}
+@keyframes ember-rise {
+  0% { transform: translate(0, 0) scale(1); opacity: 0; }
+  12% { opacity: 1; }
+  75% { opacity: 0.5; }
+  100% { transform: translate(var(--drift, 20px), -60vh) scale(0.3); opacity: 0; }
+}
 
 .grain { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; mix-blend-mode: screen; }
 
-@media (prefers-reduced-motion: reduce) { .bg-shape > div { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .ember { animation: none !important; display: none; } }
 
 .page { position: relative; z-index: 1; }
 
