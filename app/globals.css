@@ -567,10 +567,8 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 .band-earn { position: relative; }
 .earn-inner { display: flex; flex-direction: column; gap: 26px; padding-block: clamp(72px, 10vw, 148px); }
 .earn-giant { display: flex; align-items: flex-end; flex-wrap: wrap; gap: clamp(18px, 3vw, 52px); margin: clamp(28px, 4.4vw, 68px) 0 clamp(20px, 3vw, 44px); font-weight: inherit; }
-/* Old-style serif, not the site's own mono display font - the one spot asking to look aged and plain rather
-   than technical, like a numeral stamped on a casino chip rather than rendered on a terminal. */
 .earn-num {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-head);
   font-weight: 400;
   font-size: clamp(150px, 27vw, 420px);
   line-height: 0.78;

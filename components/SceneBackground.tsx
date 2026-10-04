@@ -319,7 +319,7 @@ const PIXEL_RES = 120;
 
 export function SceneBackground({ dim = false }: { dim?: boolean }) {
   const pathname = usePathname();
-  const hideBlob = pathname === "/launch";
+  const hideBlob = pathname === "/launch" || pathname === "/coins";
   const hostRef = useRef<HTMLDivElement>(null);
   const blobRef = useRef<HTMLDivElement>(null);
   const shapeRefs = useRef<(HTMLDivElement | null)[]>([]);
