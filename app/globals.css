@@ -9,7 +9,7 @@
   --bg: #0a0a0a;
   --white: #ffffff;
   --orange: #ff6a2c;
-  --orange-2: #e6581d;
+  --orange-2: #c2460f;
   --muted: #ffffff9e;
   --subtle: #ffffff70;
   --line: #ffffff26;
@@ -28,9 +28,24 @@
 *::before,
 *::after {
   box-sizing: border-box;
-  scrollbar-width: none;
+  scrollbar-width: auto;
+  scrollbar-color: var(--orange) #1a1a1a;
 }
-::-webkit-scrollbar { display: none; }
+
+/* A real, chunky scrollbar instead of the browser's hairline default - every old-OS window had one. */
+::-webkit-scrollbar { width: 18px; height: 18px; }
+::-webkit-scrollbar-track {
+  background: #141414;
+  border-left: 1px solid #000;
+  box-shadow: inset 1px 1px 0 0 #ffffff1a, inset -1px -1px 0 0 #00000099;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, var(--orange-2), var(--orange));
+  border: 1px solid #000;
+  box-shadow: inset 1px 1px 0 0 #ffffff4d, inset -1px -1px 0 0 #00000099;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--orange); }
+::-webkit-scrollbar-corner { background: #141414; }
 
 html { -webkit-text-size-adjust: 100%; }
 
@@ -52,7 +67,7 @@ ul, ol { list-style: none; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; }
 img, svg, video, canvas { display: block; max-width: 100%; }
-::selection { background: var(--white); color: var(--bg); }
+::selection { background: var(--orange); color: var(--white); }
 
 :focus-visible {
   outline: 2px solid var(--white);
@@ -73,19 +88,20 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 .t-h1 {
   font-family: var(--font-head);
   font-weight: 500;
-  letter-spacing: -0.045em;
+  letter-spacing: 0;
 }
 .t-display {
   font-size: clamp(44px, 6.8vw, 112px);
   line-height: 0.95;
   text-transform: uppercase;
+  word-spacing: -0.35em;
 }
 .t-h1 {
   font-weight: 400;
   font-size: clamp(32px, 4.4vw, 62px);
   line-height: 1.05;
 }
-.t-h3 { font-family: var(--font-head); font-size: 26px; line-height: 1.15; font-weight: 500; letter-spacing: -0.03em; }
+.t-h3 { font-family: var(--font-head); font-size: 26px; line-height: 1.15; font-weight: 500; letter-spacing: 0; }
 .t-lead { font-size: clamp(17px, 1.5vw, 20px); line-height: 1.5; }
 .t-lead.is-lg { font-size: clamp(19px, 1.8vw, 24px); }
 .t-body { font-size: 18px; line-height: 1.55; }
@@ -99,10 +115,22 @@ img, svg, video, canvas { display: block; max-width: 100%; }
   -webkit-box-decoration-break: clone;
   padding: 0 0.14em;
   color: var(--bg);
+  animation: mark-glitch 6s infinite;
 }
+/* A CRT-style channel-split flicker, most of the cycle doing nothing - the glitch should read as a rare
+   hiccup in the signal, not a constant wobble. */
+@keyframes mark-glitch {
+  0%, 92%, 100% { text-shadow: none; transform: translate(0, 0); }
+  93% { text-shadow: -2px 0 var(--white), 2px 0 #000; transform: translate(-1px, 0); }
+  94.5% { text-shadow: 2px 0 var(--white), -2px 0 #000; transform: translate(1px, 0); }
+  96% { text-shadow: none; transform: translate(0, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .mark { animation: none; } }
 
 /* ---------- Buttons ---------- */
 
+/* Old-OS button bevel: a raised edge (light top-left, dark bottom-right) that flips to a pressed, sunken edge
+   on click - the classic Windows 98 button, done in this site's own black/white/red instead of grey. */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -110,7 +138,7 @@ img, svg, video, canvas { display: block; max-width: 100%; }
   gap: 10px;
   height: 48px;
   padding: 0 18px;
-  border: 1px solid var(--line-strong);
+  border: 1px solid #000;
   border-radius: 0;
   font-family: var(--font-code);
   font-size: 13.5px;
@@ -119,15 +147,20 @@ img, svg, video, canvas { display: block; max-width: 100%; }
   letter-spacing: 0.01em;
   white-space: nowrap;
   cursor: pointer;
+  box-shadow: inset 1px 1px 0 0 #ffffff4d, inset -1px -1px 0 0 #00000099;
   transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
-.btn:active { transform: translateY(1px); }
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: inset -1px -1px 0 0 #ffffff4d, inset 1px 1px 0 0 #00000099;
+}
 .btn svg { width: 15px; height: 15px; flex: none; transition: transform 0.2s; }
 .btn:hover svg { transform: translateX(3px); }
 
+.btn { background: transparent; color: var(--white); border-color: var(--line-strong); }
 .btn-primary { background: var(--white); color: var(--bg); border-color: var(--white); }
-.btn-primary:hover { background: var(--orange); color: var(--bg); border-color: var(--orange); }
+.btn-primary:hover { background: var(--orange); color: var(--white); border-color: var(--orange); }
 .btn-outline { background: transparent; color: var(--white); }
 .btn-outline:hover { background: var(--white); color: var(--bg); }
 .btn-sm { height: 40px; padding: 0 14px; font-size: 12.5px; }
@@ -164,6 +197,7 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 .box {
   background: var(--bg);
   border: 1px solid var(--line-strong);
+  box-shadow: inset 1px 1px 0 0 #ffffff26, inset -1px -1px 0 0 #00000099, 3px 3px 0 0 #00000066;
 }
 .box.is-orange { background: var(--orange); color: var(--bg); }
 
@@ -189,11 +223,46 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 }
 @keyframes bg-spin { to { transform: rotate(360deg); } }
 
+/* The blob is a flat print (orange with black halftone dots), so it gets no shadow: everything on the page is flat. */
+.blob {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+.blob canvas {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.blob.is-hidden { display: none; }
 .grain { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; mix-blend-mode: screen; }
+/* No WebGL: a dark glassy disc with a faint orange glow, echoing the cracked-obsidian material. */
+.blob.is-fallback {
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background:
+    radial-gradient(circle at 35% 30%, #2a1610 0%, transparent 45%),
+    radial-gradient(circle, #120c0a 0%, #050403 70%);
+}
 
 @media (prefers-reduced-motion: reduce) { .bg-shape > div { animation: none !important; } }
 
 .page { position: relative; z-index: 1; }
+
+/* A faint CRT scanline sweep over the landing page only - the one page getting the full monitor treatment. */
+.landing { position: relative; }
+.landing::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, transparent 0 2px, #00000030 2px 3px);
+  mix-blend-mode: multiply;
+}
+@media (max-width: 640px) { .landing::after { display: none; } }
 
 /* ---------- Site nav (landing page) ---------- */
 
@@ -201,10 +270,9 @@ img, svg, video, canvas { display: block; max-width: 100%; }
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 100;
-  background: #0a0a0aeb;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  border-bottom: 1px solid #000;
+  box-shadow: inset 0 1px 0 0 #ffffff1a, 0 3px 0 0 #00000066;
 }
 .site-nav-inner {
   display: flex;
@@ -223,7 +291,7 @@ img, svg, video, canvas { display: block; max-width: 100%; }
   font-family: var(--font-head);
   font-weight: 600;
   font-size: 21px;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 .logo-mark { width: 30px; height: 30px; }
 .logo.is-lg { font-size: 24px; }
@@ -345,9 +413,9 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 @media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
 
 /* Progress mock (section 01) */
-.progress-card { display: flex; flex-direction: column; gap: 22px; padding: clamp(20px, 2.4vw, 30px); background: var(--orange); color: var(--bg); }
+.progress-card { display: flex; flex-direction: column; gap: 22px; }
 .progress-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--bg); }
-.progress-amount { font-family: var(--font-head); font-weight: 500; font-size: clamp(42px, 5vw, 64px); letter-spacing: -0.04em; line-height: 1; }
+.progress-amount { font-family: var(--font-head); font-weight: 500; font-size: clamp(42px, 5vw, 64px); letter-spacing: 0; line-height: 1; }
 .progress-amount small { font-family: var(--font-code); font-size: 14px; font-weight: 400; letter-spacing: 0; color: #0a0a0a9e; margin-left: 6px; }
 .progress-meta { display: flex; justify-content: space-between; gap: 12px; font-family: var(--font-code); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: #0a0a0a9e; }
 .chip {
@@ -370,10 +438,10 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 @media (prefers-reduced-motion: reduce) { .chip.is-live::before { animation: none; } }
 
 /* Metric trio (section 02): one bordered strip */
-.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 48px; border: 1px solid var(--line-strong); }
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 48px; border: 1px solid var(--line-strong); box-shadow: inset 1px 1px 0 0 #ffffff26, inset -1px -1px 0 0 #00000099, 3px 3px 0 0 #00000066; }
 .metric { display: flex; flex-direction: column; gap: 14px; padding: clamp(20px, 2.4vw, 30px); }
 .metric + .metric { border-left: 1px solid var(--line-strong); }
-.metric-num { font-family: var(--font-head); font-weight: 400; font-size: clamp(44px, 5vw, 68px); line-height: 1; letter-spacing: -0.04em; }
+.metric-num { font-family: var(--font-head); font-weight: 400; font-size: clamp(44px, 5vw, 68px); line-height: 1; letter-spacing: 0; }
 .metric p { font-size: 17px; line-height: 1.4; color: var(--muted); }
 @media (max-width: 900px) {
   .metrics { grid-template-columns: 1fr; margin-top: 32px; }
@@ -382,28 +450,8 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 
 .fine { font-family: var(--font-code); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--subtle); line-height: 1.6; }
 
-/* The five cards (section 04): one bordered strip of cells, each a real card from the deck */
-.cards-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 48px; border: 1px solid var(--line-strong); }
-.card-tile { display: flex; flex-direction: column; gap: 14px; padding: 22px 20px; min-height: 270px; position: relative; overflow: hidden; }
-.card-tile::before { content: ""; position: absolute; inset: 0; background: var(--tile-color, var(--orange)); opacity: 0.1; }
-.card-tile + .card-tile { border-left: 1px solid var(--line-strong); }
-.card-tile-num { align-self: flex-start; padding: 4px 7px; background: var(--tile-color, var(--orange)); color: var(--bg); font-family: var(--font-code); font-size: 11.5px; position: relative; }
-.card-tile h3 { font-family: var(--font-head); font-size: 24px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1; position: relative; }
-.card-tile p { margin-top: auto; font-size: 15.5px; line-height: 1.45; color: var(--muted); position: relative; }
-@media (max-width: 1100px) {
-  .cards-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .card-tile { min-height: 0; border-bottom: 1px solid var(--line-strong); }
-  .card-tile + .card-tile { border-left: 0; }
-  .card-tile:nth-child(even) { border-left: 1px solid var(--line-strong); }
-  .card-tile p { margin-top: 10px; }
-}
-@media (max-width: 640px) {
-  .cards-row { grid-template-columns: 1fr; }
-  .card-tile:nth-child(even) { border-left: 0; }
-}
-
-/* Unlock-pace table (section 05) */
-.pay-table { display: flex; flex-direction: column; margin-top: 44px; border: 1px solid var(--line-strong); }
+/* Unlock-pace table (used on /coins) */
+.pay-table { display: flex; flex-direction: column; margin-top: 44px; border: 1px solid var(--line-strong); box-shadow: inset 1px 1px 0 0 #ffffff26, inset -1px -1px 0 0 #00000099, 3px 3px 0 0 #00000066; }
 .pay-row {
   display: grid;
   grid-template-columns: 1.1fr 1fr 1fr;
@@ -431,19 +479,19 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 @media (max-width: 640px) { .pay-row { padding: 15px 14px; font-size: 15px; gap: 8px; } .pay-row span:not(:first-child) { font-size: 13px; } }
 
 /* The dashboard mock (section 06) */
-.app-window { border: 1px solid var(--line-strong); }
+.app-window { border: 1px solid var(--line-strong); box-shadow: inset 1px 1px 0 0 #ffffff26, inset -1px -1px 0 0 #00000099, 3px 3px 0 0 #00000066; }
 .app-bar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; border-bottom: 1px solid var(--line-strong); }
 .app-bar i { width: 9px; height: 9px; border: 1px solid var(--line-strong); }
 .app-bar span { margin-left: 8px; font-family: var(--font-code); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .app-body { display: flex; flex-direction: column; gap: 14px; padding: 20px; background: var(--orange); color: var(--bg); }
 .app-gpu { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--bg); }
-.app-gpu b { display: block; font-family: var(--font-head); font-size: 20px; font-weight: 500; letter-spacing: -0.03em; }
+.app-gpu b { display: block; font-family: var(--font-head); font-size: 20px; font-weight: 500; letter-spacing: 0; }
 .app-gpu small { display: block; margin-top: 5px; font-family: var(--font-code); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; color: #0a0a0a9e; }
 .app-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border: 1px solid var(--bg); }
 .app-tile { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
 .app-tile + .app-tile { border-left: 1px solid var(--bg); }
 .app-tile small { font-family: var(--font-code); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #0a0a0a9e; }
-.app-tile b { font-family: var(--font-code); font-size: 24px; font-weight: 500; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.app-tile b { font-family: var(--font-code); font-size: 24px; font-weight: 500; letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .meter { display: block; height: 6px; border: 1px solid var(--bg); }
 .meter > i { display: block; height: 100%; background: var(--bg); transition: width 1s linear; }
 @media (prefers-reduced-motion: reduce) { .meter > i { transition: none; } }
@@ -459,10 +507,10 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 .req-list li::before { content: ""; flex: none; width: 8px; height: 8px; margin-top: 7px; background: var(--orange); }
 
 /* FAQ (section 07): one bordered list */
-.faq { display: flex; flex-direction: column; margin-top: 44px; max-width: 900px; border: 1px solid var(--line-strong); }
+.faq { display: flex; flex-direction: column; margin-top: 44px; max-width: 900px; border: 1px solid var(--line-strong); box-shadow: inset 1px 1px 0 0 #ffffff26, inset -1px -1px 0 0 #00000099, 3px 3px 0 0 #00000066; }
 .faq-item + .faq-item { border-top: 1px solid var(--line-strong); }
 .faq-item h3 { font: inherit; }
-.faq-item { transition: background-color 0.25s; }
+.faq-item { transition: background-color 0.1s linear; }
 .faq-item.is-open { background: var(--orange); color: var(--bg); }
 .faq-q {
   display: flex;
@@ -481,31 +529,28 @@ img, svg, video, canvas { display: block; max-width: 100%; }
   text-align: left;
   cursor: pointer;
 }
-.faq-q::after { content: "+"; flex: none; font-family: var(--font-code); font-size: 20px; font-weight: 400; transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.faq-q::after { content: "+"; flex: none; font-family: var(--font-code); font-size: 20px; font-weight: 400; transition: transform 0.1s linear; }
 .faq-item.is-open .faq-q::after { transform: rotate(45deg); }
 .faq-a {
   display: grid;
   grid-template-rows: 0fr;
   visibility: hidden;
-  transition: grid-template-rows 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), visibility 0s linear 0.4s;
+  transition: grid-template-rows 0.12s linear, visibility 0s linear 0.12s;
 }
 .faq-item.is-open .faq-a {
   grid-template-rows: 1fr;
   visibility: visible;
-  transition: grid-template-rows 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), visibility 0s;
+  transition: grid-template-rows 0.12s linear, visibility 0s;
 }
 .faq-a-inner { overflow: hidden; min-height: 0; }
 .faq-a p {
   padding: 0 22px 22px;
   font-size: 16.5px;
+  font-weight: 700;
   line-height: 1.5;
   color: #0a0a0a9e;
   max-width: 76ch;
-  opacity: 0;
-  transform: translateY(-6px);
-  transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-.faq-item.is-open .faq-a p { opacity: 1; transform: none; transition-delay: 0.08s; }
 @media (max-width: 640px) { .faq-q { padding: 16px; font-size: 17px; } .faq-a p { padding: 0 16px 18px; font-size: 15.5px; } }
 @media (prefers-reduced-motion: reduce) {
   .faq-a, .faq-item.is-open .faq-a, .faq-a p, .faq-q::after, .faq-item { transition: none; }
@@ -524,10 +569,10 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 .earn-giant { display: flex; align-items: flex-end; flex-wrap: wrap; gap: clamp(18px, 3vw, 52px); margin: clamp(28px, 4.4vw, 68px) 0 clamp(20px, 3vw, 44px); font-weight: inherit; }
 .earn-num {
   font-family: var(--font-head);
-  font-weight: 500;
+  font-weight: 400;
   font-size: clamp(150px, 27vw, 420px);
   line-height: 0.78;
-  letter-spacing: -0.07em;
+  letter-spacing: 0;
   color: var(--orange);
 }
 .earn-per {
@@ -536,7 +581,7 @@ img, svg, video, canvas { display: block; max-width: 100%; }
   font-weight: 400;
   font-size: clamp(22px, 3.3vw, 50px);
   line-height: 1.05;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 .earn-lead { max-width: 620px; color: #ffffffb0; }
 
@@ -547,7 +592,7 @@ img, svg, video, canvas { display: block; max-width: 100%; }
   font-weight: 400;
   font-size: clamp(30px, 5vw, 78px);
   line-height: 1.02;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
   text-wrap: balance;
 }
 .interlude-line span { display: block; color: var(--subtle); }
@@ -586,16 +631,86 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 }
 .panel h3 { margin-top: 0; margin-bottom: 14px; }
 
+/* Old-OS window chrome: a title bar (icon, filename-style label, fake minimize/close) over a beveled panel -
+   used in place of a plain box wherever the app shows a form or a stat readout. */
+.window {
+  border: 1px solid #000;
+  background: var(--bg);
+  box-shadow: inset 1px 1px 0 0 #ffffff26, inset -1px -1px 0 0 #00000099, 3px 3px 0 0 #00000066;
+  margin-bottom: 20px;
+}
+.window-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 6px 5px 9px;
+  background: linear-gradient(90deg, var(--orange-2), var(--orange));
+  color: var(--white);
+  font-family: var(--font-code);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.window-titlebar-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.window-titlebar-buttons { display: flex; gap: 3px; flex: none; }
+.window-titlebar-btn {
+  width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  border: 1px solid #000;
+  box-shadow: inset 1px 1px 0 0 #ffffff4d, inset -1px -1px 0 0 #00000099;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--white);
+}
+.window-body { padding: 22px; }
+
+/* Sunken, not raised: real OS text fields read as a dent in the panel, the inverse of a button's bevel. */
 .input {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid var(--line-strong);
-  background: var(--bg);
+  border: 1px solid #000;
+  background: #050505;
   color: var(--white);
   font-size: 14px;
+  box-shadow: inset 1px 1px 0 0 #00000099, inset -1px -1px 0 0 #ffffff26;
 }
 .input::placeholder { color: var(--subtle); }
 .input:focus { outline: 2px solid var(--white); outline-offset: -2px; }
+
+/* The browser's native file-picker button is the one control this theme can't fully replace - reskin it to
+   match the site's own raised-bevel buttons instead of leaving the OS's light-grey default showing through. */
+input[type="file"] {
+  color: var(--subtle);
+  font-family: var(--font-code);
+  font-size: 12.5px;
+}
+input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 8px 14px;
+  border: 1px solid #000;
+  background: var(--white);
+  color: var(--bg);
+  font-family: var(--font-code);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: inset 1px 1px 0 0 #ffffff4d, inset -1px -1px 0 0 #00000099;
+}
+input[type="file"]::file-selector-button:hover { background: var(--orange); color: var(--white); }
+input[type="file"]::file-selector-button:active {
+  box-shadow: inset -1px -1px 0 0 #ffffff4d, inset 1px 1px 0 0 #00000099;
+}
 
 .row { display: flex; gap: 12px; align-items: center; }
 
@@ -613,11 +728,61 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 .stat {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
+  align-items: center;
+  padding: 13px 2px;
   border-bottom: 1px solid var(--line);
   font-size: 14px;
 }
 .stat:last-child { border-bottom: none; }
+.stat span:first-child {
+  font-family: var(--font-code);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--subtle);
+}
+.stat span:last-child { font-weight: 600; }
+
+/* A counted, blocky progress meter - IdleNet-style - instead of a smooth gradient fill. */
+.seg-meter { display: flex; gap: 4px; margin-top: 10px; }
+.seg-meter-cell { flex: 1; height: 9px; border: 1px solid var(--line-strong); background: transparent; }
+.seg-meter-cell.is-filled { background: var(--orange); border-color: var(--orange); }
+
+/* A small bordered abbreviation tag, like a ticker symbol next to a line item. */
+.ticker-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  padding: 3px 6px;
+  border: 1px solid var(--line-strong);
+  font-family: var(--font-code);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--subtle);
+}
+
+/* A labeled step sequence with arrows between each stage. */
+.pipeline { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.pipeline-step {
+  border: 1px solid var(--line-strong);
+  padding: 6px 10px;
+  font-family: var(--font-code);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.pipeline-arrow { color: var(--subtle); font-size: 14px; }
+
+/* On an orange background (the Forge wallet mock), these need dark borders instead of the usual light ones. */
+.progress-card .seg-meter-cell { border-color: var(--bg); }
+.progress-card .seg-meter-cell.is-filled { background: var(--bg); border-color: var(--bg); }
+.progress-card .pipeline-step { border-color: var(--bg); }
+.progress-card .pipeline-arrow { color: #0a0a0a9e; }
+.progress-card .radial-gauge-fill { stroke: var(--bg); }
+.progress-card .radial-gauge-label { color: var(--bg); }
+.progress-card .radial-gauge-meta { color: #0a0a0a9e; }
 
 .deck {
   display: grid;
@@ -654,3 +819,321 @@ img, svg, video, canvas { display: block; max-width: 100%; }
 .status-locked { background: #ffffff1a; color: var(--muted); }
 .status-unlocked { background: #3d2a0a; color: #ffd87a; }
 .status-equipped { background: #0f3a1f; color: #6bffa0; }
+
+/* ------------------------------------------------------------------
+   Token dashboard (app/token/[mint]): trade link-out, the card table
+   (slots + roster), and role-gated action panels.
+------------------------------------------------------------------- */
+
+.trade-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font-code);
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  transition: border-color 0.15s, color 0.15s;
+}
+.trade-link:hover { border-color: var(--orange); color: var(--orange); }
+.trade-link svg { width: 15px; height: 15px; }
+
+.token-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+/* The card table: a recessed strip holding the 3 equip slots up top and
+   the 5-card roster below, visually distinct from the rest of the page
+   so it reads as a table, not another form panel. */
+.card-table {
+  border: 1px solid var(--line-strong);
+  background: #050505;
+  padding: clamp(22px, 3.4vw, 44px) clamp(14px, 3vw, 28px);
+  margin-bottom: 20px;
+  box-shadow: inset 1px 1px 0 0 #ffffff26, inset -1px -1px 0 0 #00000099, 3px 3px 0 0 #00000066;
+}
+
+.table-slots {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: clamp(32px, 5vw, 56px);
+}
+.table-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 128px;
+  padding: 14px 16px;
+  border: 1px dashed var(--line-strong);
+}
+.table-slot.is-filled { border-style: solid; border-color: var(--orange); }
+.table-slot-label { font-family: var(--font-code); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--subtle); }
+.table-slot-value { font-family: var(--font-head); font-size: 18px; font-weight: 500; }
+.table-slot-value.is-empty { font-family: var(--font-code); font-size: 12.5px; font-weight: 400; color: var(--muted); }
+
+.deck-roster {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+/* Playing-card shaped (portrait, rounded, shadowed) - deliberately breaks
+   the design system's square-corner rule because the card metaphor needs it. */
+.playing-card {
+  --card-w: clamp(118px, 13.5vw, 172px);
+  width: var(--card-w);
+  aspect-ratio: 5 / 7.4;
+  border-radius: 12px;
+  border: 1px solid #000;
+  background: var(--bg);
+  box-shadow: inset 1px 1px 0 0 #ffffff26, inset -1px -1px 0 0 #00000099, 4px 4px 0 0 #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 12px 10px;
+  position: relative;
+  text-align: center;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.playing-card + .playing-card { margin-left: -16px; }
+.playing-card:hover { transform: translateY(-10px); z-index: 5; }
+
+.playing-card.is-locked {
+  background:
+    repeating-linear-gradient(45deg, transparent 0 6px, #2a1608 6px 7px),
+    repeating-linear-gradient(-45deg, transparent 0 6px, #2a1608 6px 7px),
+    #0a0806;
+  color: var(--subtle);
+}
+.playing-card.is-equipped {
+  transform: translateY(-20px);
+  border-color: var(--orange);
+  box-shadow: 0 0 0 1px var(--orange), 0 18px 34px rgba(0, 0, 0, 0.6);
+  z-index: 6;
+}
+.playing-card.is-equipped:hover { transform: translateY(-28px); }
+
+.playing-card-top { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.playing-card-rank { font-family: var(--font-code); font-size: 11px; letter-spacing: 0.02em; color: var(--subtle); }
+.playing-card-top .ticker-tag { font-size: 8.5px; padding: 2px 4px; min-width: 28px; }
+.playing-card-name { font-family: var(--font-head); font-size: 13.5px; font-weight: 500; line-height: 1.15; }
+.playing-card-desc {
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--muted);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+.playing-card.is-locked .playing-card-desc { color: var(--subtle); }
+.playing-card-status { margin-top: auto; font-family: var(--font-code); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--subtle); }
+.playing-card-vote {
+  width: 100%;
+  height: 28px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--white);
+  font-family: var(--font-code);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.playing-card-vote:hover { background: var(--orange); border-color: var(--orange); color: var(--bg); }
+.playing-card-vote[disabled] { opacity: 0.35; cursor: default; }
+
+@media (max-width: 640px) {
+  .playing-card + .playing-card { margin-left: -24px; }
+}
+
+/* Public vs creator action panels - mutually exclusive, never both shown. */
+.role-panel-public { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 640px) { .role-panel-public { grid-template-columns: 1fr; } }
+
+.role-panel-creator {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px dashed var(--line-strong);
+}
+.role-panel-creator-label {
+  width: 100%;
+  font-family: var(--font-code);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--subtle);
+  margin-bottom: 2px;
+}
+
+/* ------------------------------------------------------------------
+   Landing page: HUD-bracket data panels, a radial gauge, a sample
+   ledger feed, a casino pixel-art border, and the CRT-desktop hero
+   centerpiece - the page's own terminal/readout vocabulary, used
+   instead of (or alongside) the Windows-chrome `.window` elsewhere.
+------------------------------------------------------------------- */
+
+/* A bordered panel with four small corner tick-marks instead of a title bar - built from background layers so
+   it needs no extra markup. Reads as an old terminal readout or a HUD frame around live data. */
+.hud-panel {
+  position: relative;
+  border: 1px solid var(--line-strong);
+  background:
+    linear-gradient(var(--orange), var(--orange)) top left / 14px 2px no-repeat,
+    linear-gradient(var(--orange), var(--orange)) top left / 2px 14px no-repeat,
+    linear-gradient(var(--orange), var(--orange)) top right / 14px 2px no-repeat,
+    linear-gradient(var(--orange), var(--orange)) top right / 2px 14px no-repeat,
+    linear-gradient(var(--orange), var(--orange)) bottom left / 14px 2px no-repeat,
+    linear-gradient(var(--orange), var(--orange)) bottom left / 2px 14px no-repeat,
+    linear-gradient(var(--orange), var(--orange)) bottom right / 14px 2px no-repeat,
+    linear-gradient(var(--orange), var(--orange)) bottom right / 2px 14px no-repeat,
+    var(--bg);
+}
+.hud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-code);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--subtle);
+}
+.hud-tag {
+  padding: 3px 8px;
+  border: 1px solid var(--orange);
+  color: var(--orange);
+  font-size: 10px;
+}
+.hud-body { padding: 22px; }
+
+/* A numbered section eyebrow: "01 /" prefix in orange, then the running line and label. */
+.section-num b { color: var(--orange); font-weight: 600; margin-right: 10px; }
+
+/* A circular stroke-dasharray gauge with a score in the middle - a different read than the segmented meter,
+   for the one spot that wants a single "how's it doing" number instead of a progress fraction. */
+.radial-gauge { display: flex; align-items: center; gap: 16px; }
+.radial-gauge svg { flex: none; }
+.radial-gauge-fill { stroke: var(--orange); }
+.radial-gauge-score { font-family: var(--font-head); font-size: 32px; font-weight: 500; line-height: 1; }
+.radial-gauge-label {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-code);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--orange);
+}
+.radial-gauge-meta { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+/* A sample live-activity feed, styled like a terminal log - rows of fake recent play, each with a status tag. */
+.ledger { display: flex; flex-direction: column; }
+.ledger-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-code);
+  font-size: 12px;
+}
+.ledger-row:last-child { border-bottom: none; }
+.ledger-id { color: var(--white); }
+.ledger-id::before { content: "■ "; color: var(--orange); font-size: 8px; }
+.ledger-meta { color: var(--subtle); }
+.ledger-status { justify-self: end; color: #6bffa0; text-transform: uppercase; letter-spacing: 0.04em; }
+@media (max-width: 640px) {
+  .ledger-row { grid-template-columns: 1fr auto; }
+  .ledger-meta:nth-child(3) { display: none; }
+}
+
+/* The three-tile trust strip: a pixel icon, a bold label, a short line - swapped in for the old plain bullet
+   list so this page's "why it's safe" claims read the same way its data panels do. */
+.feature-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+.feature-tile { display: flex; gap: 14px; align-items: flex-start; }
+.feature-tile-icon {
+  flex: none;
+  padding: 6px;
+  border: 1px solid var(--line-strong);
+  background: repeating-conic-gradient(#ffffff0d 0% 25%, transparent 0% 50%) 0 0 / 8px 8px;
+}
+.feature-tile h4 { font-size: 14.5px; margin-bottom: 6px; }
+.feature-tile p { font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+@media (max-width: 900px) { .feature-strip { grid-template-columns: 1fr; } }
+
+/* A tiled strip of casino pixel art (chip / card / die, repeating) framing a section - this page's answer to
+   a pixel-art tree line, just dealt from a different deck. */
+.casino-border { display: flex; justify-content: center; flex-wrap: wrap; gap: 28px; opacity: 0.9; }
+.casino-border.is-footer { gap: 20px; padding-top: 26px; opacity: 0.5; }
+
+/* ---------- The CRT desktop: a hero centerpiece modelled on an old all-in-one's screen ---------- */
+
+.crt {
+  position: relative;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 14px;
+  background: #1c1a18;
+  border: 1px solid #000;
+  box-shadow: inset 1px 1px 0 0 #ffffff26, inset -1px -1px 0 0 #00000099, 6px 6px 0 0 #00000066;
+}
+.crt-vents { display: flex; justify-content: center; gap: 4px; padding-bottom: 10px; }
+.crt-vents span { width: 24px; height: 3px; background: #000; opacity: 0.5; }
+.crt-screen {
+  padding: clamp(28px, 5vw, 56px) clamp(20px, 4vw, 40px);
+  background: radial-gradient(circle at 50% 20%, #171311 0%, #0a0806 70%);
+  border: 1px solid #000;
+  box-shadow: inset 0 0 0 3px #000, inset 0 0 40px #00000080;
+}
+/* Flex, not grid: a fixed set of icons should spread evenly across the full width no matter how many fit,
+   instead of a grid's auto-fit leaving empty trailing tracks that bunch them to one side. */
+.crt-icons { display: flex; justify-content: space-between; flex-wrap: wrap; row-gap: clamp(20px, 3vw, 36px); }
+.crt-icons .crt-icon { width: 96px; }
+@media (max-width: 640px) { .crt-icons { justify-content: space-evenly; } }
+.crt-icon { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.crt-icon-label {
+  font-family: var(--font-code);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+.crt-brand {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #2a2622;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-code);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--subtle);
+}
+.crt-stand { width: 160px; height: 18px; margin: 0 auto; background: #1c1a18; border: 1px solid #000; }
+.crt-base { width: 260px; height: 10px; margin: 0 auto; background: #141210; border: 1px solid #000; }
+
+/* ---------- Launched-coins directory (/coins) ---------- */
+
+a.pay-row { cursor: pointer; transition: background-color 0.15s; }
+a.pay-row:hover { background: #ffffff0d; }

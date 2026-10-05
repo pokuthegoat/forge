@@ -129,6 +129,122 @@ export async function updateTokenState(
   });
 }
 
+/** Locks a card into a slot, but only if the slot is still actually empty
+ * and the card isn't already equipped elsewhere - checked and written in
+ * one atomic SQL statement, so two concurrent attempts (e.g. two page
+ * loads both finalizing a vote at once) can't both succeed. Returns
+ * whether this call was the one that won. */
+export async function equipCardIfStillOpen(
+  mint: string,
+  slotIndex: number,
+  cardId: number
+): Promise<boolean> {
+  const res = await db.execute({
+    sql: `UPDATE tokens
+          SET slots = json_set(slots, '$[' || ? || ']', ?),
+              card_equipped = json_set(card_equipped, '$[' || ? || ']', json('true'))
+          WHERE mint = ?
+            AND json_extract(slots, '$[' || ? || ']') = ?
+            AND json_extract(card_equipped, '$[' || ? || ']') = 0`,
+    args: [slotIndex, cardId, cardId, mint, slotIndex, EMPTY_SLOT, cardId],
+  });
+  return res.rowsAffected > 0;
+}
+
+/** Adds newly-synced fees, but only if `total_fees_received` still matches
+ * what the caller read before computing the split - checked and written
+ * atomically, so two concurrent syncs reading the same wallet balance
+ * can't both add the same fees twice. Returns whether this call's update
+ * actually applied. */
+export async function applyFeeSyncIfUnchanged(
+  mint: string,
+  expectedTotalFeesReceived: string,
+  newTotalFeesReceived: string,
+  newCardPools: string[]
+): Promise<boolean> {
+  const res = await db.execute({
+    sql: `UPDATE tokens
+          SET total_fees_received = ?, card_pools = ?
+          WHERE mint = ? AND total_fees_received = ?`,
+    args: [newTotalFeesReceived, JSON.stringify(newCardPools), mint, expectedTotalFeesReceived],
+  });
+  return res.rowsAffected > 0;
+}
+
+/** Zeroes out one card's pool, but only if it still holds the exact amount
+ * the caller read before deciding to spend it - checked and written
+ * atomically, so two concurrent triggers can't both spend the same batch
+ * of fees. Call this BEFORE actually spending the pool (buying, burning,
+ * paying out), and only proceed if it returns true. */
+export async function claimCardPoolIfUnchanged(
+  mint: string,
+  cardId: number,
+  expectedPool: string
+): Promise<boolean> {
+  const res = await db.execute({
+    sql: `UPDATE tokens
+          SET card_pools = json_set(card_pools, '$[' || ? || ']', '0')
+          WHERE mint = ? AND json_extract(card_pools, '$[' || ? || ']') = ?`,
+    args: [cardId, mint, cardId, expectedPool],
+  });
+  return res.rowsAffected > 0;
+}
+
+/** Same as claimCardPoolIfUnchanged, but for the jackpot specifically:
+ * also advances jackpot_round in the same atomic statement, checked
+ * against the round the caller read, so two concurrent "roll winner"
+ * attempts can't both pay out the same round. */
+export async function claimJackpotIfUnchanged(
+  mint: string,
+  cardId: number,
+  expectedPool: string,
+  expectedRound: number
+): Promise<boolean> {
+  const res = await db.execute({
+    sql: `UPDATE tokens
+          SET card_pools = json_set(card_pools, '$[' || ? || ']', '0'),
+              jackpot_round = jackpot_round + 1
+          WHERE mint = ?
+            AND json_extract(card_pools, '$[' || ? || ']') = ?
+            AND jackpot_round = ?`,
+    args: [cardId, mint, cardId, expectedPool, expectedRound],
+  });
+  return res.rowsAffected > 0;
+}
+
+/** How much of the Reward card's lifetime accrued fees a wallet has
+ * already claimed for this token. Defaults to '0' if they've never
+ * claimed. */
+export async function getRewardClaimed(mint: string, wallet: string): Promise<string> {
+  await ensureSchema();
+  const res = await db.execute({
+    sql: "SELECT claimed FROM reward_claims WHERE mint = ? AND wallet = ?",
+    args: [mint, wallet],
+  });
+  if (res.rows.length === 0) return "0";
+  return (res.rows[0] as unknown as { claimed: string }).claimed;
+}
+
+/** Records a wallet's reward claim, but only if their already-claimed
+ * total still matches what the caller read before computing this payout -
+ * checked and written atomically (an upsert whose update half is
+ * conditional), so two concurrent claims by the same wallet can't both
+ * succeed off the same stale "nothing claimed yet" read. */
+export async function claimRewardIfUnchanged(
+  mint: string,
+  wallet: string,
+  expectedClaimed: string,
+  newClaimed: string
+): Promise<boolean> {
+  const res = await db.execute({
+    sql: `INSERT INTO reward_claims (mint, wallet, claimed) VALUES (?, ?, ?)
+          ON CONFLICT (mint, wallet) DO UPDATE SET claimed = excluded.claimed
+          WHERE reward_claims.claimed = ?`,
+    args: [mint, wallet, newClaimed, expectedClaimed],
+  });
+  return res.rowsAffected > 0;
+}
+
 export async function getVoteState(mint: string, slotIndex: number): Promise<VoteStateRow | null> {
   await ensureSchema();
   const res = await db.execute({

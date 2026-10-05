@@ -6,9 +6,11 @@ import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 import { LinkButton } from "./Buttons";
 import { useForgeWallet } from "@/lib/useForgeWallet";
+import { smoothScrollTo } from "@/lib/smooth-scroll";
 
 const NAV_LINKS = [
   { label: "Launch", href: "/launch" },
+  { label: "Coins", href: "/coins" },
   { label: "How it works", href: "/#how-it-works" },
   { label: "FAQ", href: "/#faq" },
 ];
@@ -19,7 +21,7 @@ function scrollToHash(e: React.MouseEvent<HTMLAnchorElement>, href: string, onHo
   if (!target) return;
   e.preventDefault();
   const top = target.getBoundingClientRect().top + window.scrollY - 70;
-  window.scrollTo({ top, behavior: "smooth" });
+  if (!smoothScrollTo(top)) window.scrollTo({ top, behavior: "smooth" });
 }
 
 export function Nav() {

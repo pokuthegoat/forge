@@ -9,11 +9,19 @@ import {
   CARD_REWARD,
   EMPTY_SLOT,
   NUM_CARD_TYPES,
+  NUM_SLOTS,
   UNLOCK_THRESHOLD_LAMPORTS,
+  VOTE_WINDOW_SECS,
 } from "./forge-program";
 import {
   getToken,
   updateTokenState,
+  getVoteState,
+  startVote,
+  closeVote,
+  equipCardIfStillOpen,
+  applyFeeSyncIfUnchanged,
+  getRewardClaimed,
   type TokenRow,
 } from "./forge-db";
 import { buildDistributeFeesInstructions } from "./pumpfun";
@@ -82,15 +90,24 @@ export async function syncFees(connection: Connection, token: TokenRow): Promise
     });
   }
 
-  await updateTokenState(token.mint, {
-    total_fees_received: updatedTotalReceived.toString(),
-    card_pools: cardPools.map((p) => p.toString()),
-  });
+  const newCardPools = cardPools.map((p) => p.toString());
+  const applied = await applyFeeSyncIfUnchanged(
+    token.mint,
+    token.total_fees_received,
+    updatedTotalReceived.toString(),
+    newCardPools
+  );
+
+  if (!applied) {
+    // Another concurrent sync already recorded this balance change first -
+    // trust its result instead of double-counting the same fees on top.
+    return (await getToken(token.mint)) ?? token;
+  }
 
   return {
     ...token,
     total_fees_received: updatedTotalReceived.toString(),
-    card_pools: cardPools.map((p) => p.toString()),
+    card_pools: newCardPools,
   };
 }
 
@@ -128,16 +145,68 @@ export function pickVoteWinner(
   return winner;
 }
 
-/** Pro-rata reward payout for a holder, against the current Reward card
- * pool and the token's current circulating supply. */
+/** Permissionless, lazy (checked on page load, no real server timer).
+ * For every open slot: opens a vote automatically the moment there's an
+ * eligible unlocked-and-unequipped card, and - once that vote has been
+ * open for VOTE_WINDOW_SECS - locks in whichever card currently has the
+ * most votes. No manual start/finalize action needed from anyone. */
+export async function autoManageVotes(token: TokenRow): Promise<TokenRow> {
+  let current = token;
+
+  for (let slotIndex = 0; slotIndex < NUM_SLOTS; slotIndex++) {
+    if (current.slots[slotIndex] !== EMPTY_SLOT) continue;
+
+    const hasCandidate = Array.from({ length: current.cards_unlocked }).some(
+      (_, cardId) => !current.card_equipped[cardId]
+    );
+    if (!hasCandidate) continue;
+
+    const vote = await getVoteState(current.mint, slotIndex);
+    if (!vote) {
+      await startVote(current.mint, slotIndex);
+      continue;
+    }
+    if (!vote.is_open) continue;
+
+    const now = Math.floor(Date.now() / 1000);
+    if (now < vote.start_ts + VOTE_WINDOW_SECS) continue;
+
+    const winner = pickVoteWinner(current, vote.vote_counts);
+    if (winner === null) continue;
+
+    const won = await equipCardIfStillOpen(current.mint, slotIndex, winner);
+    await closeVote(current.mint, slotIndex);
+
+    if (won) {
+      const slots = [...current.slots];
+      slots[slotIndex] = winner;
+      const cardEquipped = [...current.card_equipped];
+      cardEquipped[winner] = true;
+      current = { ...current, slots, card_equipped: cardEquipped };
+    } else {
+      // Someone else's request already resolved this slot (or equipped
+      // this same card elsewhere) between our read and our write - pick up
+      // the real state instead of trusting our now-stale local copy.
+      current = (await getToken(current.mint)) ?? current;
+    }
+  }
+
+  return current;
+}
+
+/** Pro-rata reward payout for a holder: their share of everything the
+ * Reward card has EVER accrued (card_pools[CARD_REWARD], which this no
+ * longer spends down on claim - it only grows), minus what they've
+ * already claimed before. Without tracking that, a holder could just
+ * claim repeatedly and drain whatever's left each time. */
 export async function calculateRewardPayout(
   connection: Connection,
   token: TokenRow,
   holder: PublicKey
-): Promise<bigint> {
+): Promise<{ payout: bigint; alreadyClaimed: string }> {
   const mint = new PublicKey(token.mint);
   const mintInfo = await getMint(connection, mint);
-  if (mintInfo.supply === 0n) return 0n;
+  if (mintInfo.supply === 0n) return { payout: 0n, alreadyClaimed: "0" };
 
   const ata = getAssociatedTokenAddressSync(mint, holder);
   let balance = 0n;
@@ -145,12 +214,17 @@ export async function calculateRewardPayout(
     const account = await getAccount(connection, ata);
     balance = account.amount;
   } catch {
-    return 0n;
+    return { payout: 0n, alreadyClaimed: "0" };
   }
-  if (balance === 0n) return 0n;
+  if (balance === 0n) return { payout: 0n, alreadyClaimed: "0" };
 
-  const pool = BigInt(token.card_pools[CARD_REWARD]);
-  return (pool * balance) / mintInfo.supply;
+  const totalAccrued = BigInt(token.card_pools[CARD_REWARD]);
+  const entitlement = (totalAccrued * balance) / mintInfo.supply;
+
+  const alreadyClaimed = await getRewardClaimed(token.mint, holder.toBase58());
+  const payout = entitlement > BigInt(alreadyClaimed) ? entitlement - BigInt(alreadyClaimed) : 0n;
+
+  return { payout, alreadyClaimed };
 }
 
 export async function refreshToken(connection: Connection, mint: string): Promise<TokenRow | null> {

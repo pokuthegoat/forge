@@ -4,11 +4,16 @@ import { useState } from "react";
 
 type Item = { q: string; a: string };
 
-export function Faq({ items }: { items: readonly Item[] }) {
+export function Faq({ items, title }: { items: readonly Item[]; title?: string }) {
   const [open, setOpen] = useState<number | null>(null);
 
   return (
     <div className="faq">
+      {title && (
+        <div className="hud-header" style={{ padding: "16px 20px", margin: 0 }}>
+          <span>{title}</span>
+        </div>
+      )}
       {items.map((f, i) => {
         const isOpen = open === i;
         return (

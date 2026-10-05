@@ -6,17 +6,33 @@ export const CARD_JACKPOT = 4;
 
 export const CARD_NAMES = ["Buyback", "Burn", "LP", "Reward", "Jackpot"] as const;
 
+export const CARD_DESCRIPTIONS: Record<(typeof CARD_NAMES)[number], string> = {
+  Buyback: "Takes its cut of trading fees and buys the token on the open market, forever.",
+  Burn: "Buys the token with its fee cut, then burns it. Supply goes down, for good.",
+  LP: "Buys the token and locks it as liquidity, deepening the pool a token trades against.",
+  Reward: "Banks its fee cut in SOL. Holders claim their share, pro-rata to what they hold.",
+  Jackpot: "Banks its fee cut into a pot. One holder, picked at random, takes all of it.",
+};
+
 export const NUM_SLOTS = 3;
 export const NUM_CARD_TYPES = 5;
 export const EMPTY_SLOT = 255;
 
+/** Card rank shown as a tarot-style roman numeral instead of a plain 01-05 count. */
+export const CARD_NUMERALS = ["I", "II", "III", "IV", "V"] as const;
+
+/** A short ticker-style tag per card, like a stock symbol next to a line item. */
+export const CARD_TICKERS = ["BUY", "BRN", "LP", "RWD", "JKP"] as const;
+
 /** Lamports of cumulative trading fees that must have landed in a token's
  * Forge wallet, per tier, before the next card unlocks. */
-export const UNLOCK_THRESHOLD_LAMPORTS = 5_000_000_000;
+export const UNLOCK_THRESHOLD_LAMPORTS = 1_000_000_000;
 
-/** How long a vote stays open once a slot's card tier unlocks, before
- * anyone can finalize it. */
-export const VOTE_WINDOW_SECS = 60 * 60;
+/** How long a vote stays open once a slot's card tier unlocks before it's
+ * automatically resolved - whichever eligible card has the most votes at
+ * that point gets equipped. Re-checked lazily on page load, same as fee
+ * syncing and unlock checks - not a real server-side timer. */
+export const VOTE_WINDOW_SECS = 10 * 60;
 
 /** Lamports sent to a new token's Forge wallet at launch so it can pay the
  * network fee to sweep its own pump.fun creator-fee payouts later. Not

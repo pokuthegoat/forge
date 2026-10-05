@@ -48,6 +48,12 @@ export async function ensureSchema() {
       voted_at INTEGER NOT NULL,
       PRIMARY KEY (mint, slot_index, voter)
     )`,
+    `CREATE TABLE IF NOT EXISTS reward_claims (
+      mint TEXT NOT NULL,
+      wallet TEXT NOT NULL,
+      claimed TEXT NOT NULL DEFAULT '0',
+      PRIMARY KEY (mint, wallet)
+    )`,
     `CREATE TABLE IF NOT EXISTS jackpot_entries (
       mint TEXT NOT NULL,
       round INTEGER NOT NULL,

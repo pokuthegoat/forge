@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useForgeWallet } from "@/lib/useForgeWallet";
+import { Window } from "@/components/Window";
 
 interface AdminToken {
   mint: string;
@@ -86,14 +87,14 @@ export default function AdminPage() {
         </section>
 
         {!session ? (
-          <div className="panel">
+          <Window title="LOGIN.EXE">
             <button className="btn btn-primary" onClick={signIn}>
               Sign in with wallet
             </button>
             {status && <p style={{ color: "var(--text-dim)", marginTop: 10 }}>{status}</p>}
-          </div>
+          </Window>
         ) : (
-          <div className="panel">
+          <Window title="ADMIN.SYS">
             <div className="row" style={{ marginBottom: 16 }}>
               <input
                 className="input"
@@ -108,7 +109,7 @@ export default function AdminPage() {
             {status && <p style={{ color: "var(--text-dim)", marginBottom: 10 }}>{status}</p>}
 
             {tokens.map((t) => (
-              <div key={t.mint} className="panel" style={{ marginBottom: 10 }}>
+              <Window key={t.mint} title={`${t.symbol}.DAT`} style={{ marginBottom: 10 }}>
                 <div className="stat">
                   <span>Name</span>
                   <span>{t.name} ({t.symbol})</span>
@@ -148,9 +149,9 @@ export default function AdminPage() {
                   <span>Cards unlocked</span>
                   <span>{t.cards_unlocked} / 5</span>
                 </div>
-              </div>
+              </Window>
             ))}
-          </div>
+          </Window>
         )}
       </div>
     </main>

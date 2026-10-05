@@ -17,7 +17,11 @@ const SOLANA_MAINNET = "solana:mainnet" as const;
 export function useForgeWallet() {
   const { ready, authenticated, login, logout } = usePrivy();
   const { wallets } = useWallets();
-  const wallet = wallets[0] ?? null;
+  // Privy's useWallets() surfaces any wallet it can detect (e.g. an installed
+  // extension) even before the user has actually logged in - only trust one
+  // once `authenticated` is true, or an unconnected visitor gets treated as
+  // whoever's wallet extension happens to be installed in their browser.
+  const wallet = authenticated ? wallets[0] ?? null : null;
 
   const publicKey = useMemo(() => (wallet ? new PublicKey(wallet.address) : null), [wallet]);
 

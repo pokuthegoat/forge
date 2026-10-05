@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "@/lib/forge-db";
-import { syncFees, checkUnlock, sweepPumpFunFees } from "@/lib/forge-engine";
+import { syncFees, checkUnlock, sweepPumpFunFees, autoManageVotes } from "@/lib/forge-engine";
 import { executeBuyback, executeBurn, executeLp } from "@/lib/card-execution";
 import { getServerConnection } from "@/lib/connection";
 import { CARD_BUYBACK, CARD_BURN, CARD_LP } from "@/lib/forge-program";
@@ -22,6 +22,7 @@ export async function GET(
     token = await syncFees(connection, token);
     const unlockResult = await checkUnlock(token);
     token = unlockResult.token;
+    token = await autoManageVotes(token);
 
     if (token.slots.includes(CARD_BUYBACK) && BigInt(token.card_pools[CARD_BUYBACK]) > 0n) {
       await executeBuyback(connection, token);

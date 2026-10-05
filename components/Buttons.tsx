@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { smoothScrollTo } from "@/lib/smooth-scroll";
 
 export function Arrow() {
   return (
@@ -46,7 +47,7 @@ export function HowItWorksButton({ variant = "outline", small }: { variant?: Var
     if (!target) return;
     e.preventDefault();
     const top = target.getBoundingClientRect().top + window.scrollY - 70;
-    window.scrollTo({ top, behavior: "smooth" });
+    if (!smoothScrollTo(top)) window.scrollTo({ top, behavior: "smooth" });
   };
   return (
     <a href="#how-it-works" className={`btn btn-${variant}${small ? " btn-sm" : ""}`} onClick={onClick}>
